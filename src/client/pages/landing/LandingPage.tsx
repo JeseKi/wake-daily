@@ -1,46 +1,8 @@
+import { Button, Dropdown, Avatar, Flex, Typography } from 'antd'
+import { LogIn, LogOut, PenLine, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Tag, Avatar, Dropdown, Flex, Typography } from 'antd'
-import { RocketOutlined, SafetyOutlined, ThunderboltOutlined, ToolOutlined, GlobalOutlined, MobileOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import type { MenuProps } from 'antd'
 import { useAuth } from '../../hooks/useAuth'
-
-const features = [
-  {
-    icon: <ThunderboltOutlined className="text-3xl text-blue-500" />,
-    title: 'FastAPI + React',
-    desc: '现代化全栈技术栈，开箱即用',
-  },
-  {
-    icon: <SafetyOutlined className="text-3xl text-green-500" />,
-    title: '完整的认证系统',
-    desc: 'JWT + TOTP 双因素认证，设备管理中',
-  },
-  {
-    icon: <ToolOutlined className="text-3xl text-purple-500" />,
-    title: '模块化架构',
-    desc: '参考 example_module，快速开发业务模块',
-  },
-  {
-    icon: <GlobalOutlined className="text-3xl text-cyan-500" />,
-    title: '暗色/亮色主题',
-    desc: '内置主题切换，Tailwind CSS 4 + Ant Design',
-  },
-  {
-    icon: <MobileOutlined className="text-3xl text-orange-500" />,
-    title: '响应式设计',
-    desc: '移动优先，自适应各种屏幕尺寸',
-  },
-  {
-    icon: <RocketOutlined className="text-3xl text-red-500" />,
-    title: '快速开发',
-    desc: 'Vite 构建，热更新，开发体验极佳',
-  },
-]
-
-const techStack = [
-  'React 19', 'TypeScript', 'Vite', 'Tailwind CSS 4',
-  'Ant Design 5', 'FastAPI', 'SQLAlchemy', 'Pydantic',
-  'JWT Auth', 'TOTP 2FA', 'Alembic', 'Loguru',
-]
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -51,10 +13,9 @@ export default function LandingPage() {
     navigate('/', { replace: true })
   }
 
-  const userMenuItems = [
+  const userMenuItems: MenuProps['items'] = [
     {
       key: 'user',
-      icon: <UserOutlined />,
       label: (
         <Flex vertical gap={2} style={{ minWidth: 160 }}>
           <Typography.Text type="secondary">当前用户</Typography.Text>
@@ -63,168 +24,71 @@ export default function LandingPage() {
       ),
       disabled: true,
     },
-    { type: 'divider' as const },
+    { type: 'divider' },
     {
       key: 'logout',
-      icon: <LogoutOutlined />,
+      icon: <LogOut size={16} />,
       label: '退出登录',
       onClick: handleLogout,
     },
   ]
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text-primary)] transition-colors duration-300">
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-[var(--app-elevated-bg)] backdrop-blur-md border-b border-[var(--app-border-color)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tight">
-            <span className="text-blue-500">Full</span>Stack
-            <span className="text-[var(--app-text-secondary)] text-sm ml-2">Template</span>
-          </div>
+    <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text-primary)]">
+      <header className="fixed top-0 z-50 w-full border-b border-[var(--app-border-color)] bg-[var(--app-elevated-bg)]/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <button
+            type="button"
+            className="flex items-center gap-2 text-left text-lg font-semibold"
+            onClick={() => navigate('/')}
+          >
+            <PenLine size={20} />
+            觉知日记
+          </button>
           {isAuthenticated ? (
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-              <Avatar
-                icon={<UserOutlined />}
-                style={{ background: '#1668dc', cursor: 'pointer' }}
-              />
+              <Avatar icon={<User size={16} />} style={{ cursor: 'pointer' }} />
             </Dropdown>
           ) : (
-            <Button
-              type="primary"
-              size="small"
-              onClick={() => navigate('/login')}
-            >
+            <Button icon={<LogIn size={16} />} onClick={() => navigate('/login')}>
               登录
             </Button>
           )}
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <Tag color="blue" className="mb-4">🚀 开箱即用的全栈模板</Tag>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            快速启动你的
-            <span className="text-blue-500"> 全栈项目</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-[var(--app-text-secondary)] max-w-2xl mx-auto mb-8 leading-relaxed">
-            基于 FastAPI + React 19 的现代化全栈模板，
-            内置完整认证系统、主题切换和模块化架构，
-            让你专注于业务逻辑开发。
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isAuthenticated ? (
-              <Button
-                type="primary"
-                size="large"
-                className="h-12 px-8 text-base font-medium"
-                onClick={() => navigate('/dashboard')}
-              >
-                进入工作台
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="primary"
-                  size="large"
-                  className="h-12 px-8 text-base font-medium"
-                  onClick={() => navigate('/register')}
-                >
-                  免费开始使用
-                </Button>
-                <Button
-                  size="large"
-                  className="h-12 px-8 text-base font-medium"
-                  onClick={() => navigate('/login')}
-                >
-                  已有账号？登录
-                </Button>
-              </>
-            )}
-          </div>
-          {!isAuthenticated && (
-            <p className="mt-4 text-sm text-[var(--app-text-secondary)]">
-              无需信用卡 · 开源免费 · 即刻部署
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Tech Stack */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 border-y border-[var(--app-border-color)]">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-center text-sm text-[var(--app-text-secondary)] mb-6 uppercase tracking-wider">
-            技术栈
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {techStack.map((tech) => (
-              <Tag key={tech} className="text-sm py-1 px-3">
-                {tech}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              为什么选择这个模板？
-            </h2>
-            <p className="text-lg text-[var(--app-text-secondary)] max-w-2xl mx-auto">
-              经过实战验证的架构设计，助你快速构建生产级应用
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="p-6 rounded-2xl bg-[var(--app-elevated-bg)] border border-[var(--app-border-color)] theme-card-shadow hover:translate-y-[-4px] transition-all duration-300"
-              >
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-[var(--app-text-secondary)] leading-relaxed">
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="p-10 sm:p-16 rounded-3xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-cyan-500/10 border border-[var(--app-border-color)]">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              {isAuthenticated ? '继续你的开发之旅？' : '准备好开始了吗？'}
-            </h2>
-            <p className="text-lg text-[var(--app-text-secondary)] mb-8 max-w-xl mx-auto">
-              {isAuthenticated
-                ? '回到工作台，继续构建你的应用'
-                : '加入开发者社区，使用这个经过验证的全栈模板启动你的下一个项目'}
-            </p>
+      <section className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-4 pb-16 pt-28 sm:px-6">
+        <div className="max-w-2xl">
+          <Typography.Title level={1} style={{ marginBottom: 20, fontSize: 48, lineHeight: 1.12 }}>
+            私密觉察日记
+          </Typography.Title>
+          <Typography.Paragraph className="text-lg leading-8 text-[var(--app-text-secondary)]">
+            这不是打卡，不是治疗，不是变好计划。只是一个每天陪你看一眼自己心上褶皱的地方。
+          </Typography.Paragraph>
+          <Typography.Paragraph className="text-lg leading-8 text-[var(--app-text-secondary)]">
+            你可以不写，可以乱写，可以写同一个念头一百天。没有进度条，没有勋章。
+          </Typography.Paragraph>
+          <Flex gap={12} wrap="wrap" className="mt-8">
             <Button
               type="primary"
               size="large"
-              className="h-12 px-8 text-base font-medium"
+              icon={<PenLine size={18} />}
               onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
             >
-              {isAuthenticated ? '进入工作台' : '立即注册，免费使用'}
+              开始书写
             </Button>
-          </div>
+            <Button size="large" onClick={() => navigate(isAuthenticated ? '/journal/recent' : '/login')}>
+              {isAuthenticated ? '最近回看' : '登录'}
+            </Button>
+          </Flex>
+        </div>
+        <div className="mt-16 border-l-2 border-[var(--app-border-color)] pl-5 text-[var(--app-text-secondary)]">
+          <p className="mb-2">今日一问</p>
+          <p className="text-xl leading-9 text-[var(--app-text-primary)]">
+            如果不用急着变好，今天你最想诚实写下什么？
+          </p>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 sm:px-6 lg:px-8 border-t border-[var(--app-border-color)]">
-        <div className="max-w-7xl mx-auto text-center text-sm text-[var(--app-text-secondary)]">
-          <p>© 2026 FullStack Template. 开源项目，MIT 许可证。</p>
-        </div>
-      </footer>
-    </div>
+    </main>
   )
 }

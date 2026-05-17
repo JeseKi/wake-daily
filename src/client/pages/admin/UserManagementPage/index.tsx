@@ -4,9 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { listUsers } from '../../../lib/admin'
 import type { AdminUser } from '../../../lib/types'
 import { useAuth } from '../../../hooks/useAuth'
-import DangerousActionTwoFactorModal from '../../../components/auth/DangerousActionTwoFactorModal'
 import { resolveErrorMessage } from './utils'
-import type { TwoFactorDialogState } from './types'
 import EditUserModal from './EditUserModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import DeleteUserModal from './DeleteUserModal'
@@ -39,7 +37,6 @@ export default function UserManagementPage() {
   const [deleting, setDeleting] = useState(false)
   const [creating, setCreating] = useState(false)
   const [createModalVisible, setCreateModalVisible] = useState(false)
-  const [twoFactorDialog, setTwoFactorDialog] = useState<TwoFactorDialogState | null>(null)
   const [editForm] = Form.useForm()
   const [resetPasswordForm] = Form.useForm()
   const [deleteForm] = Form.useForm()
@@ -86,11 +83,6 @@ export default function UserManagementPage() {
     setDeletingUser(null)
     deleteForm.resetFields()
   }, [deleteForm])
-
-  const openTwoFactorDialog = useCallback(
-    (title: string, description: string, onConfirm: (code: string) => Promise<void>) => {
-      setTwoFactorDialog({ title, description, onConfirm })
-    }, [])
 
   const openCreateModal = useCallback(() => {
     setCreateModalVisible(true)
@@ -179,10 +171,7 @@ export default function UserManagementPage() {
           message,
           setSaving,
           setUsers,
-          setTwoFactorDialog,
           closeEditModal,
-          currentUser,
-          openTwoFactorDialog,
         })}
         onCancel={closeEditModal}
         onResetPassword={openResetPasswordModal}
@@ -199,10 +188,7 @@ export default function UserManagementPage() {
           message,
           setResettingPassword,
           setUsers,
-          setTwoFactorDialog,
           closeResetPasswordModal,
-          currentUser,
-          openTwoFactorDialog,
         })}
         onCancel={closeResetPasswordModal}
       />
@@ -219,11 +205,8 @@ export default function UserManagementPage() {
           message,
           setDeleting,
           setUsers,
-          setTwoFactorDialog,
           closeDeleteModal,
           closeEditModal,
-          currentUser,
-          openTwoFactorDialog,
         })}
         onCancel={closeDeleteModal}
       />
@@ -237,24 +220,9 @@ export default function UserManagementPage() {
           message,
           setCreating,
           setUsers,
-          setTwoFactorDialog,
           closeCreateModal,
-          currentUser,
-          openTwoFactorDialog,
         })}
         onCancel={closeCreateModal}
-      />
-
-      <DangerousActionTwoFactorModal
-        open={Boolean(twoFactorDialog)}
-        title={twoFactorDialog?.title ?? '二步验证'}
-        description={twoFactorDialog?.description ?? ''}
-        loading={saving || deleting || creating || resettingPassword}
-        onCancel={() => setTwoFactorDialog(null)}
-        onConfirm={async (code) => {
-          if (!twoFactorDialog) return
-          await twoFactorDialog.onConfirm(code)
-        }}
       />
     </Flex>
   )

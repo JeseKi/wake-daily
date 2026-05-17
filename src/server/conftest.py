@@ -103,6 +103,7 @@ def test_db_engine() -> Iterator[Connection]:
     import src.server.oauth.models  # noqa: F401
     import src.server.oauth_provider.models  # noqa: F401
     import src.server.providers.models  # noqa: F401
+    import src.server.journal.models  # noqa: F401
 
     Base.metadata.create_all(bind=keep_conn)
 
@@ -180,5 +181,9 @@ def init_test_database(test_db_engine) -> None:
             admin.set_password("admin123")
             session.add(admin)
             session.commit()
+
+        from src.server.journal.bootstrap import seed_default_daily_questions
+
+        seed_default_daily_questions(session)
     finally:
         session.close()

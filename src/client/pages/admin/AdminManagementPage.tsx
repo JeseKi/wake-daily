@@ -1,9 +1,9 @@
-import { ApiOutlined, KeyOutlined, LockOutlined, TeamOutlined } from '@ant-design/icons'
+import { KeyOutlined, LockOutlined, QuestionCircleOutlined, TeamOutlined } from '@ant-design/icons'
 import { Tabs } from 'antd'
 import UserManagementPage from './UserManagementPage'
 import PermissionManagementPage from './PermissionManagementPage'
 import ScopeManagementPage from './ScopeManagementPage'
-import OAuthClientManagementPage from './OAuthClientManagementPage'
+import JournalQuestionManagementPage from './JournalQuestionManagementPage'
 
 const tabItems = [
   {
@@ -15,6 +15,16 @@ const tabItems = [
       </span>
     ),
     children: <UserManagementPage />,
+  },
+  {
+    key: 'journal-questions',
+    label: (
+      <span>
+        <QuestionCircleOutlined />
+        每日问题
+      </span>
+    ),
+    children: <JournalQuestionManagementPage />,
   },
   {
     key: 'scopes',
@@ -35,16 +45,6 @@ const tabItems = [
       </span>
     ),
     children: <PermissionManagementPage />,
-  },
-  {
-    key: 'oauth-clients',
-    label: (
-      <span>
-        <ApiOutlined />
-        OAuth Clients
-      </span>
-    ),
-    children: <OAuthClientManagementPage />,
   },
 ]
 

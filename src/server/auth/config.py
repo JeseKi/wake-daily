@@ -55,10 +55,10 @@ class AuthConfig(BaseSettings):
         default=10, title="2FA 绑定确认有效期(分钟)"
     )
     two_factor_issuer_name: str = Field(
-        default="Fullstack Template", title="TOTP Issuer 名称"
+        default="觉知日记", title="TOTP Issuer 名称"
     )
     two_factor_encryption_key: str = Field(
-        default="fullstack-template-2fa-dev-key-change-me",
+        default="wake-daily-2fa-dev-key-change-me",
         title="2FA secret 加密密钥",
         description="生产务必通过环境变量覆盖",
     )

@@ -1,7 +1,6 @@
-import api, { buildTwoFactorHeaders } from './api'
+import api from './api'
 import { setTokens, clearTokens } from './tokenStorage'
 import type {
-  BackupCodesResponse,
   EmailChangeCodePayload,
   EmailChangeConfirmPayload,
   LoginResponse,
@@ -14,12 +13,6 @@ import type {
   PasswordResetLinkPayload,
   PasswordResetWithTokenPayload,
   RegisterWithCodePayload,
-  TokenResponse,
-  TwoFactorDisablePayload,
-  TwoFactorRegenerateBackupCodesPayload,
-  TwoFactorSetupConfirmPayload,
-  TwoFactorSetupStartResponse,
-  TwoFactorVerifyPayload,
   UpdateProfilePayload,
   UserProfile,
   VerificationCodePayload,
@@ -72,12 +65,6 @@ export function buildOAuthAuthorizeUrl(provider: OAuthProviderInfo['provider'], 
   return `${baseUrl}/oauth/${providerPathMap[provider]}/authorize${query ? `?${query}` : ''}`
 }
 
-export async function verifyTwoFactorLogin(payload: TwoFactorVerifyPayload): Promise<TokenResponse> {
-  const { data } = await api.post<TokenResponse>('/auth/2fa/verify', payload)
-  setTokens(data.access_token)
-  return data
-}
-
 export async function register(payload: RegisterWithCodePayload): Promise<UserProfile> {
   const { data } = await api.post<UserProfile>('/auth/register', payload)
   return data
@@ -123,10 +110,8 @@ export async function confirmEmailChange(payload: EmailChangeConfirmPayload): Pr
   return data
 }
 
-export async function sendPasswordChangeLink(twoFactorCode?: string): Promise<{ message: string }> {
-  const { data } = await api.post<{ message: string }>('/auth/profile/password-change/link', null, {
-    headers: buildTwoFactorHeaders(twoFactorCode),
-  })
+export async function sendPasswordChangeLink(): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>('/auth/profile/password-change/link')
   return data
 }
 
@@ -150,29 +135,6 @@ export async function logoutAllDevices(): Promise<MessageResponse> {
   } finally {
     clearTokens()
   }
-}
-
-export async function startTwoFactorSetup(): Promise<TwoFactorSetupStartResponse> {
-  const { data } = await api.post<TwoFactorSetupStartResponse>('/auth/2fa/setup/start')
-  return data
-}
-
-export async function confirmTwoFactorSetup(payload: TwoFactorSetupConfirmPayload): Promise<BackupCodesResponse> {
-  const { data } = await api.post<BackupCodesResponse>('/auth/2fa/setup/confirm', payload)
-  return data
-}
-
-export async function disableTwoFactor(payload: TwoFactorDisablePayload): Promise<MessageResponse> {
-  const { data } = await api.post<MessageResponse>('/auth/2fa/disable', payload)
-  clearTokens()
-  return data
-}
-
-export async function regenerateBackupCodes(
-  payload: TwoFactorRegenerateBackupCodesPayload,
-): Promise<BackupCodesResponse> {
-  const { data } = await api.post<BackupCodesResponse>('/auth/2fa/backup-codes/regenerate', payload)
-  return data
 }
 
 export function clearAuthState(): void {

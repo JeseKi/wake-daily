@@ -20,7 +20,6 @@ import { listScopes, listUsers, updateUserScopes } from '../../lib/admin'
 import type { AdminScope, AdminUser } from '../../lib/types'
 import { resolveApiErrorMessage } from '../../lib/error'
 import { useAuth } from '../../hooks/useAuth'
-import DangerousActionTwoFactorModal from '../../components/auth/DangerousActionTwoFactorModal'
 
 interface ScopeFormValues {
   scopes: string[]
@@ -57,7 +56,6 @@ export default function PermissionManagementPage() {
   const [keyword, setKeyword] = useState('')
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null)
   const [saving, setSaving] = useState(false)
-  const [twoFactorPromptOpen, setTwoFactorPromptOpen] = useState(false)
   const [form] = Form.useForm<ScopeFormValues>()
 
   const loadData = useCallback(async () => {
@@ -133,36 +131,22 @@ export default function PermissionManagementPage() {
         return
       }
 
-      const performSave = async (twoFactorCode?: string) => {
-        setSaving(true)
-        try {
-          const updated = await updateUserScopes(
-            editingUser.id,
-            { scopes: values.scopes },
-            twoFactorCode,
-          )
-          setUsers((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
-          message.success(`已更新 ${updated.username} 的权限范围`)
-          closeEditModal()
-          setTwoFactorPromptOpen(false)
-        } finally {
-          setSaving(false)
-        }
+      setSaving(true)
+      try {
+        const updated = await updateUserScopes(editingUser.id, { scopes: values.scopes })
+        setUsers((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
+        message.success(`已更新 ${updated.username} 的权限范围`)
+        closeEditModal()
+      } finally {
+        setSaving(false)
       }
-
-      if (currentUser?.two_factor_enabled) {
-        setTwoFactorPromptOpen(true)
-        return
-      }
-
-      await performSave()
     } catch (err) {
       if (typeof err === 'object' && err && 'errorFields' in err) {
         return
       }
       message.error(resolveApiErrorMessage(err, '请求失败，请稍后再试。'))
     }
-  }, [closeEditModal, currentUser?.two_factor_enabled, editingUser, form, message])
+  }, [closeEditModal, editingUser, form, message])
 
   const columns: TableColumnsType<AdminUser> = useMemo(
     () => [
@@ -324,32 +308,6 @@ export default function PermissionManagementPage() {
           </Form>
         </Space>
       </Modal>
-
-      <DangerousActionTwoFactorModal
-        open={twoFactorPromptOpen}
-        title="二步验证后更新用户权限范围"
-        description="修改用户权限范围属于危险操作，请先完成二步验证。"
-        loading={saving}
-        onCancel={() => setTwoFactorPromptOpen(false)}
-        onConfirm={async (code) => {
-          if (!editingUser) {
-            return
-          }
-          try {
-            const values = await form.validateFields()
-            setSaving(true)
-            const updated = await updateUserScopes(editingUser.id, { scopes: values.scopes }, code)
-            setUsers((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
-            message.success(`已更新 ${updated.username} 的权限范围`)
-            closeEditModal()
-            setTwoFactorPromptOpen(false)
-          } catch (err) {
-            message.error(resolveApiErrorMessage(err, '请求失败，请稍后再试。'))
-          } finally {
-            setSaving(false)
-          }
-        }}
-      />
     </Flex>
   )
 }

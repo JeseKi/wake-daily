@@ -31,6 +31,7 @@ from src.server.scope_management.router import router as scope_management_router
 from src.server.oauth.router import router as oauth_router
 from src.server.oauth_provider.router import router as oauth_provider_router
 from src.server.providers.router import router as provider_dev_router
+from src.server.journal.router import router as journal_router
 
 # --- 配置与常量 ---
 PROJECT_ROOT = Path(global_config.project_root)
@@ -72,8 +73,8 @@ async def lifespan(_: FastAPI):
 
 # --- 应用实例与中间件 ---
 fastapi_kwargs = {
-    "title": "Fullstack Template Backend",
-    "description": "提供身份验证、数据库交互及示例模块的后端服务。",
+    "title": "觉知日记 Backend",
+    "description": "提供身份验证、私密日记、每日问题与管理员维护能力的后端服务。",
     "lifespan": lifespan,
 }
 
@@ -182,6 +183,7 @@ app.include_router(oauth_provider_router)
 app.include_router(example_router)
 app.include_router(admin_router)
 app.include_router(scope_management_router)
+app.include_router(journal_router)
 if global_config.app_env == "dev":
     app.include_router(provider_dev_router)
 

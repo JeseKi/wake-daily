@@ -13,14 +13,11 @@ import {
   Typography,
 } from 'antd'
 import {
-  ArrowLeftOutlined,
   GithubOutlined,
   GoogleOutlined,
-  KeyOutlined,
   LockOutlined,
   LoginOutlined,
   MailOutlined,
-  SafetyCertificateOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
@@ -45,19 +42,16 @@ function normalizeRedirectPath(path: string | null | undefined): string | null {
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { exchangeOAuthTicket, login, verifyTwoFactorLogin, loading, isAuthenticated, sendPasswordResetLink } = useAuth()
+  const { exchangeOAuthTicket, login, loading, isAuthenticated, sendPasswordResetLink } = useAuth()
   const { turnstile } = useRuntimeConfig()
   const { message } = App.useApp()
   const turnstileSiteKey = turnstile.siteKey
   const turnstileEnabled = turnstile.enabled
 
   const [form] = Form.useForm<{ username: string; password: string }>()
-  const [twoFactorForm] = Form.useForm<{ code: string }>()
   const [resetForm] = Form.useForm<{ email: string }>()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pendingChallengeToken, setPendingChallengeToken] = useState<string | null>(null)
-  const [useBackupCode, setUseBackupCode] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [resetSending, setResetSending] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
@@ -131,14 +125,10 @@ export default function LoginPage() {
       try {
         const result = await exchangeOAuthTicket({ ticket: oauthTicket })
         if ('requires_2fa' in result) {
-          setPendingChallengeToken(result.challenge_token)
-          setUseBackupCode(false)
-          twoFactorForm.resetFields()
-          message.info('OAuth 验证通过，请继续输入双因素验证码。')
-          navigate('/login', {
-            replace: true,
-            state: { from: { pathname: redirectPath } },
-          })
+          const text = '当前 demo 前端已关闭二步验证登录，请联系管理员关闭该账号的二步验证。'
+          setError(text)
+          message.error(text)
+          navigate('/login', { replace: true, state: location.state })
           return
         }
         message.success('欢迎回来')
@@ -162,7 +152,6 @@ export default function LoginPage() {
     navigate,
     oauthTicket,
     redirectPath,
-    twoFactorForm,
   ])
 
   useEffect(() => {
@@ -193,10 +182,9 @@ export default function LoginPage() {
         turnstile_token: loginTurnstileToken ?? undefined,
       })
       if ('requires_2fa' in result) {
-        setPendingChallengeToken(result.challenge_token)
-        setUseBackupCode(false)
-        twoFactorForm.resetFields()
-        message.info('密码验证通过，请继续输入双因素验证码。')
+        const text = '当前 demo 前端已关闭二步验证登录，请联系管理员关闭该账号的二步验证。'
+        setError(text)
+        message.error(text)
         return
       }
       message.success('欢迎回来')
@@ -209,35 +197,6 @@ export default function LoginPage() {
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const handleVerifyTwoFactor = async (values: { code: string }) => {
-    if (!pendingChallengeToken) {
-      return
-    }
-    setSubmitting(true)
-    setError(null)
-    try {
-      await verifyTwoFactorLogin({
-        challenge_token: pendingChallengeToken,
-        code: values.code.trim(),
-      })
-      message.success(useBackupCode ? 'backup code 验证通过' : '双因素验证通过')
-      navigate(redirectPath, { replace: true })
-    } catch (err) {
-      const text = resolveApiErrorMessage(err, '双因素验证失败，请稍后重试。')
-      setError(text)
-      message.error(text)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleBackToPassword = () => {
-    setPendingChallengeToken(null)
-    setUseBackupCode(false)
-    setError(null)
-    twoFactorForm.resetFields()
   }
 
   const handleSendResetLink = async (email: string) => {
@@ -297,87 +256,19 @@ export default function LoginPage() {
               欢迎回来
             </Typography.Title>
             <Typography.Text type="secondary">
-              输入用户名或邮箱及密码以访问现代化的前端模板。
+              输入用户名或邮箱及密码，回到你的私密书写空间。
             </Typography.Text>
           </div>
           {registerSuccess && <Alert type="success" showIcon message="注册成功，请使用新账号登录。" style={{ marginBottom: 0 }} />}
           {error && <Alert type="error" showIcon message={error} />}
-          {pendingChallengeToken ? (
-            <Space direction="vertical" size={20} style={{ width: '100%' }}>
-              <Alert
-                type="info"
-                showIcon
-                message="密码已验证"
-                description={useBackupCode ? '请输入一条尚未使用过的 backup code。' : '请输入身份验证器当前显示的 6 位动态码。'}
-              />
-              <Form
-                form={twoFactorForm}
-                layout="vertical"
-                onFinish={handleVerifyTwoFactor}
-                requiredMark={false}
-                autoComplete="off"
-              >
-                <Form.Item
-                  label={useBackupCode ? 'Backup Code' : '验证码'}
-                  name="code"
-                  rules={[
-                    { required: true, message: useBackupCode ? '请输入 backup code' : '请输入验证码' },
-                    { min: 6, message: useBackupCode ? 'backup code 长度不正确' : '验证码至少 6 位' },
-                  ]}
-                >
-                  <Input
-                    size="large"
-                    prefix={useBackupCode ? <KeyOutlined /> : <SafetyCertificateOutlined />}
-                    placeholder={useBackupCode ? '例如 ABCD-EFGH' : '请输入 6 位验证码'}
-                    maxLength={useBackupCode ? 32 : 6}
-                    autoFocus
-                    allowClear
-                  />
-                </Form.Item>
-                <Form.Item style={{ marginBottom: 12 }}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    size="large"
-                    icon={<SafetyCertificateOutlined />}
-                    loading={submitting}
-                    block
-                  >
-                    完成验证
-                  </Button>
-                </Form.Item>
-              </Form>
-              <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
-                <Button
-                  type="link"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={handleBackToPassword}
-                  style={{ paddingInline: 0 }}
-                >
-                  返回重新输入密码
-                </Button>
-                <Button
-                  type="link"
-                  onClick={() => {
-                    setUseBackupCode((prev) => !prev)
-                    setError(null)
-                    twoFactorForm.resetFields()
-                  }}
-                  style={{ paddingInline: 0 }}
-                >
-                  {useBackupCode ? '改用身份验证器验证码' : '使用 backup code'}
-                </Button>
-              </Flex>
-            </Space>
-          ) : (
-            <>
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleSubmit}
-                requiredMark={false}
-                autoComplete="on"
-              >
+          <>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              requiredMark={false}
+              autoComplete="on"
+            >
                 <Form.Item
                   label="用户名/邮箱"
                   name="username"
@@ -428,32 +319,31 @@ export default function LoginPage() {
                     登录
                   </Button>
                 </Form.Item>
-              </Form>
-              {oauthProviders.length > 0 && (
-                <>
-                  <Divider plain style={{ marginBlock: 0 }}>
-                    或
-                  </Divider>
-                  <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                    {oauthProviders.map((provider) => (
-                      <Button
-                        key={provider.provider}
-                        size="large"
-                        icon={provider.provider === 'GITHUB' ? <GithubOutlined /> : <GoogleOutlined />}
-                        loading={submitting}
-                        block
-                        onClick={() => {
-                          window.location.assign(buildOAuthAuthorizeUrl(provider.provider, redirectPath))
-                        }}
-                      >
-                        使用 {provider.label} 登录
-                      </Button>
-                    ))}
-                  </Space>
-                </>
-              )}
-            </>
-          )}
+            </Form>
+            {oauthProviders.length > 0 && (
+              <>
+                <Divider plain style={{ marginBlock: 0 }}>
+                  或
+                </Divider>
+                <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                  {oauthProviders.map((provider) => (
+                    <Button
+                      key={provider.provider}
+                      size="large"
+                      icon={provider.provider === 'GITHUB' ? <GithubOutlined /> : <GoogleOutlined />}
+                      loading={submitting}
+                      block
+                      onClick={() => {
+                        window.location.assign(buildOAuthAuthorizeUrl(provider.provider, redirectPath))
+                      }}
+                    >
+                      使用 {provider.label} 登录
+                    </Button>
+                  ))}
+                </Space>
+              </>
+            )}
+          </>
           <Flex justify="space-between" align="center">
             <Flex gap={8} align="center">
               <Typography.Text type="secondary">还没有账号？</Typography.Text>

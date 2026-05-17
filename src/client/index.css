@@ -8,31 +8,31 @@
 }
 
 html[data-theme='light'] {
-  --app-bg: #f5f7fb;
-  --app-bg-accent: rgba(22, 104, 220, 0.14);
-  --app-text-primary: #0f172a;
-  --app-text-secondary: #64748b;
-  --app-link: #1668dc;
-  --app-elevated-bg: rgba(255, 255, 255, 0.88);
-  --app-border-color: rgba(148, 163, 184, 0.28);
-  --app-card-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-  --app-header-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-  --app-floating-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
-  --app-surface-muted: #f8fafc;
+  --app-bg: #fbf6ef;
+  --app-bg-soft: #fffaf4;
+  --app-text-primary: #2b211b;
+  --app-text-secondary: #7a6658;
+  --app-link: #b15f3a;
+  --app-elevated-bg: rgba(255, 250, 244, 0.94);
+  --app-border-color: rgba(156, 119, 88, 0.26);
+  --app-card-shadow: 0 16px 38px rgba(96, 55, 32, 0.12);
+  --app-header-shadow: 0 2px 12px rgba(96, 55, 32, 0.08);
+  --app-floating-shadow: 0 12px 28px rgba(96, 55, 32, 0.14);
+  --app-surface-muted: #f4eadf;
 }
 
 html[data-theme='dark'] {
-  --app-bg: #0b1220;
-  --app-bg-accent: rgba(96, 165, 250, 0.16);
-  --app-text-primary: #e5eefc;
-  --app-text-secondary: #94a3b8;
-  --app-link: #7cb5ff;
-  --app-elevated-bg: rgba(16, 24, 38, 0.92);
-  --app-border-color: rgba(148, 163, 184, 0.2);
-  --app-card-shadow: 0 18px 48px rgba(2, 6, 23, 0.4);
-  --app-header-shadow: 0 8px 32px rgba(2, 6, 23, 0.28);
-  --app-floating-shadow: 0 16px 36px rgba(2, 6, 23, 0.42);
-  --app-surface-muted: #111c2d;
+  --app-bg: #6d5749;
+  --app-bg-soft: #7c6555;
+  --app-text-primary: #fff4e8;
+  --app-text-secondary: #ead0bc;
+  --app-link: #ffd2a8;
+  --app-elevated-bg: rgba(92, 71, 58, 0.96);
+  --app-border-color: rgba(255, 210, 168, 0.24);
+  --app-card-shadow: 0 18px 44px rgba(72, 48, 36, 0.28);
+  --app-header-shadow: 0 8px 26px rgba(72, 48, 36, 0.22);
+  --app-floating-shadow: 0 16px 32px rgba(72, 48, 36, 0.3);
+  --app-surface-muted: #806756;
 }
 
 html,
@@ -43,9 +43,7 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top, var(--app-bg-accent), transparent 36%),
-    var(--app-bg);
+  background: linear-gradient(180deg, var(--app-bg-soft) 0%, var(--app-bg) 48%, var(--app-bg) 100%);
   color: var(--app-text-primary);
   transition:
     background-color 0.25s ease,

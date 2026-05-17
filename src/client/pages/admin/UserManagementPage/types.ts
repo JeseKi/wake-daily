@@ -27,9 +27,3 @@ export interface CreateFormValues {
   password: string
   confirmPassword: string
 }
-
-export interface TwoFactorDialogState {
-  title: string
-  description: string
-  onConfirm: (code: string) => Promise<void>
-}

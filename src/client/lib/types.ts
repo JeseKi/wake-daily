@@ -77,38 +77,6 @@ export interface OAuthDeviceAuthorizationResult {
   status: 'approved' | 'denied'
 }
 
-export interface OAuthClient {
-  id: number
-  client_id: string
-  name: string
-  redirect_uris: string[]
-  allowed_scopes: string[]
-  is_active: boolean
-  require_pkce: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface OAuthClientWithSecret extends OAuthClient {
-  client_secret: string
-}
-
-export interface OAuthClientCreatePayload {
-  name: string
-  redirect_uris: string[]
-  allowed_scopes: string[]
-  is_active: boolean
-  require_pkce: boolean
-}
-
-export interface OAuthClientUpdatePayload {
-  name?: string
-  redirect_uris?: string[]
-  allowed_scopes?: string[]
-  is_active?: boolean
-  require_pkce?: boolean
-}
-
 export interface AuthTokens {
   accessToken: string
 }
@@ -124,45 +92,12 @@ export interface UserProfile {
   name: string | null
   role: UserRole
   status: UserStatus
-  two_factor_enabled: boolean
-  two_factor_confirmed_at: string | null
 }
 
 export interface LoginPayload {
   username: string
   password: string
   turnstile_token?: string
-}
-
-export interface TwoFactorVerifyPayload {
-  challenge_token: string
-  code: string
-}
-
-export interface TwoFactorSetupStartResponse {
-  secret: string
-  secret_masked: string
-  otpauth_url: string
-  setup_token: string
-}
-
-export interface TwoFactorSetupConfirmPayload {
-  setup_token: string
-  code: string
-}
-
-export interface TwoFactorDisablePayload {
-  password: string
-  code: string
-}
-
-export interface TwoFactorRegenerateBackupCodesPayload {
-  password: string
-  code: string
-}
-
-export interface BackupCodesResponse extends MessageResponse {
-  backup_codes: string[]
 }
 
 export interface RegisterPayload {
@@ -262,6 +197,57 @@ export interface AdminScope {
 
 export interface AdminScopeUpdatePayload {
   category: ScopeCategory
+}
+
+export interface DailyQuestion {
+  id: number
+  content: string
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DailyQuestionPayload {
+  content: string
+  is_active: boolean
+  sort_order: number
+}
+
+export interface DailyQuestionUpdatePayload {
+  content?: string
+  is_active?: boolean
+  sort_order?: number
+}
+
+export interface JournalEntryPayload {
+  question_id: number
+  content: string
+}
+
+export interface AttachmentMatch {
+  word: string
+  start: number
+  end: number
+}
+
+export interface JournalEntry {
+  id: number
+  user_id: number
+  question_id: number
+  question_content: string
+  content: string
+  created_at: string
+  updated_at: string
+  attachment_matches: AttachmentMatch[]
+  relief_count: number
+  has_relief_feedback: boolean
+}
+
+export interface ReliefFeedback {
+  entry_id: number
+  relief_count: number
+  has_relief_feedback: boolean
 }
 
 export interface ItemPayload {

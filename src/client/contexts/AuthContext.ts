@@ -1,6 +1,5 @@
 import { createContext } from 'react'
 import type {
-  BackupCodesResponse,
   EmailChangeCodePayload,
   EmailChangeConfirmPayload,
   LoginResponse,
@@ -11,11 +10,6 @@ import type {
   PasswordResetLinkPayload,
   PasswordResetWithTokenPayload,
   RegisterWithCodePayload,
-  TwoFactorDisablePayload,
-  TwoFactorRegenerateBackupCodesPayload,
-  TwoFactorSetupConfirmPayload,
-  TwoFactorSetupStartResponse,
-  TwoFactorVerifyPayload,
   UpdateProfilePayload,
   UserProfile,
   VerificationCodePayload,
@@ -27,7 +21,6 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   login: (payload: LoginPayload) => Promise<LoginResponse>
   exchangeOAuthTicket: (payload: OAuthTicketExchangePayload) => Promise<LoginResponse>
-  verifyTwoFactorLogin: (payload: TwoFactorVerifyPayload) => Promise<UserProfile>
   register: (payload: RegisterWithCodePayload) => Promise<UserProfile>
   registerWithCode: (payload: RegisterWithCodePayload) => Promise<UserProfile>
   sendVerificationCode: (payload: VerificationCodePayload) => Promise<{ message: string }>
@@ -35,15 +28,11 @@ export interface AuthContextValue {
   resetPasswordWithToken: (payload: PasswordResetWithTokenPayload) => Promise<{ message: string }>
   sendEmailChangeCode: (payload: EmailChangeCodePayload) => Promise<{ message: string }>
   confirmEmailChange: (payload: EmailChangeConfirmPayload) => Promise<UserProfile>
-  sendPasswordChangeLink: (twoFactorCode?: string) => Promise<{ message: string }>
+  sendPasswordChangeLink: () => Promise<{ message: string }>
   confirmPasswordChange: (payload: PasswordChangeConfirmPayload) => Promise<{ message: string }>
   refreshProfile: () => Promise<UserProfile | null>
   logout: () => Promise<void>
   logoutAllDevices: () => Promise<MessageResponse>
-  startTwoFactorSetup: () => Promise<TwoFactorSetupStartResponse>
-  confirmTwoFactorSetup: (payload: TwoFactorSetupConfirmPayload) => Promise<BackupCodesResponse>
-  disableTwoFactor: (payload: TwoFactorDisablePayload) => Promise<MessageResponse>
-  regenerateBackupCodes: (payload: TwoFactorRegenerateBackupCodesPayload) => Promise<BackupCodesResponse>
   update: (payload: UpdateProfilePayload) => Promise<UserProfile>
 }
 

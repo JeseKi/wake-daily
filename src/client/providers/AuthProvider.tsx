@@ -7,21 +7,14 @@ import {
 } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import type {
-  BackupCodesResponse,
   EmailChangeCodePayload,
   EmailChangeConfirmPayload,
   LoginPayload,
-  MessageResponse,
   OAuthTicketExchangePayload,
   PasswordChangeConfirmPayload,
   PasswordResetLinkPayload,
   PasswordResetWithTokenPayload,
   RegisterWithCodePayload,
-  TwoFactorDisablePayload,
-  TwoFactorRegenerateBackupCodesPayload,
-  TwoFactorSetupConfirmPayload,
-  TwoFactorSetupStartResponse,
-  TwoFactorVerifyPayload,
   UpdateProfilePayload,
   UserProfile,
   VerificationCodePayload,
@@ -29,16 +22,13 @@ import type {
 import { hasValidTokens } from '../lib/tokenStorage'
 import {
   clearAuthState,
-  confirmTwoFactorSetup as confirmTwoFactorSetupRequest,
   confirmEmailChange,
   confirmPasswordChange,
-  disableTwoFactor as disableTwoFactorRequest,
   fetchProfile,
   exchangeOAuthTicket as exchangeOAuthTicketRequest,
   login as loginRequest,
   logout as logoutRequest,
   logoutAllDevices as logoutAllDevicesRequest,
-  regenerateBackupCodes as regenerateBackupCodesRequest,
   register as registerRequest,
   registerWithCode as registerWithCodeRequest,
   resetPasswordWithToken as resetPasswordWithTokenRequest,
@@ -46,9 +36,7 @@ import {
   sendPasswordChangeLink as sendPasswordChangeLinkRequest,
   sendPasswordResetLink as sendPasswordResetLinkRequest,
   sendVerificationCode as sendVerificationCodeRequest,
-  startTwoFactorSetup as startTwoFactorSetupRequest,
   updateProfile,
-  verifyTwoFactorLogin as verifyTwoFactorLoginRequest,
 } from '../lib/auth'
 import { useAuth } from '../hooks/useAuth'
 import { AuthContext, type AuthContextValue } from '../contexts/AuthContext'
@@ -99,13 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result
   }, [])
 
-  const verifyTwoFactorLogin = useCallback(async (payload: TwoFactorVerifyPayload) => {
-    await verifyTwoFactorLoginRequest(payload)
-    const profile = await fetchProfile()
-    setUser(profile)
-    return profile
-  }, [])
-
   const register = useCallback(async (payload: RegisterWithCodePayload) => {
     const profile = await registerRequest(payload)
     return profile
@@ -153,38 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result
   }, [])
 
-  const startTwoFactorSetup = useCallback(async (): Promise<TwoFactorSetupStartResponse> => {
-    const result = await startTwoFactorSetupRequest()
-    return result
-  }, [])
-
-  const confirmTwoFactorSetup = useCallback(
-    async (payload: TwoFactorSetupConfirmPayload): Promise<BackupCodesResponse> => {
-      const result = await confirmTwoFactorSetupRequest(payload)
-      const profile = await fetchProfile()
-      setUser(profile)
-      return result
-    },
-    [],
-  )
-
-  const disableTwoFactor = useCallback(
-    async (payload: TwoFactorDisablePayload): Promise<MessageResponse> => {
-      const result = await disableTwoFactorRequest(payload)
-      setUser(null)
-      return result
-    },
-    [],
-  )
-
-  const regenerateBackupCodes = useCallback(
-    async (payload: TwoFactorRegenerateBackupCodesPayload): Promise<BackupCodesResponse> => {
-      const result = await regenerateBackupCodesRequest(payload)
-      return result
-    },
-    [],
-  )
-
   const handleUpdate = useCallback(async (payload: UpdateProfilePayload) => {
     const updated = await updateProfile(payload)
     setUser(updated)
@@ -210,8 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return updated
   }, [])
 
-  const handleSendPasswordChangeLink = useCallback(async (twoFactorCode?: string) => {
-    const result = await sendPasswordChangeLinkRequest(twoFactorCode)
+  const handleSendPasswordChangeLink = useCallback(async () => {
+    const result = await sendPasswordChangeLinkRequest()
     return result
   }, [])
 
@@ -227,7 +176,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(user),
       login,
       exchangeOAuthTicket,
-      verifyTwoFactorLogin,
       register,
       registerWithCode,
       sendVerificationCode,
@@ -239,10 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       logout,
       logoutAllDevices,
-      startTwoFactorSetup,
-      confirmTwoFactorSetup,
-      disableTwoFactor,
-      regenerateBackupCodes,
       update: handleUpdate,
       resetPasswordWithToken: handleResetPassword,
     }),
@@ -251,7 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       exchangeOAuthTicket,
-      verifyTwoFactorLogin,
       register,
       registerWithCode,
       sendVerificationCode,
@@ -263,10 +206,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       logout,
       logoutAllDevices,
-      startTwoFactorSetup,
-      confirmTwoFactorSetup,
-      disableTwoFactor,
-      regenerateBackupCodes,
       handleUpdate,
       handleResetPassword,
     ],

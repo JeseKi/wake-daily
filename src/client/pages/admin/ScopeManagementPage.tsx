@@ -5,8 +5,6 @@ import type { TableColumnsType } from 'antd'
 import { listScopes, updateScope } from '../../lib/admin'
 import type { AdminScope, ScopeCategory } from '../../lib/types'
 import { resolveApiErrorMessage } from '../../lib/error'
-import { useAuth } from '../../hooks/useAuth'
-import DangerousActionTwoFactorModal from '../../components/auth/DangerousActionTwoFactorModal'
 
 interface ScopeFormValues {
   category: ScopeCategory
@@ -20,7 +18,6 @@ const categoryOptions = [
 
 export default function ScopeManagementPage() {
   const { message } = App.useApp()
-  const { user } = useAuth()
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -38,7 +35,6 @@ export default function ScopeManagementPage() {
   const [keyword, setKeyword] = useState('')
   const [editingScope, setEditingScope] = useState<AdminScope | null>(null)
   const [saving, setSaving] = useState(false)
-  const [twoFactorPromptOpen, setTwoFactorPromptOpen] = useState(false)
   const [form] = Form.useForm<ScopeFormValues>()
 
   const loadScopes = useCallback(async () => {
@@ -96,32 +92,22 @@ export default function ScopeManagementPage() {
         return
       }
 
-      const performSave = async (twoFactorCode?: string) => {
-        setSaving(true)
-        try {
-          const updated = await updateScope(editingScope.scope, { category: values.category }, twoFactorCode)
-          setScopes((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
-          message.success(`已更新 ${updated.scope} 的分类`)
-          closeEditModal()
-          setTwoFactorPromptOpen(false)
-        } finally {
-          setSaving(false)
-        }
+      setSaving(true)
+      try {
+        const updated = await updateScope(editingScope.scope, { category: values.category })
+        setScopes((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
+        message.success(`已更新 ${updated.scope} 的分类`)
+        closeEditModal()
+      } finally {
+        setSaving(false)
       }
-
-      if (user?.two_factor_enabled) {
-        setTwoFactorPromptOpen(true)
-        return
-      }
-
-      await performSave()
     } catch (err) {
       if (typeof err === 'object' && err && 'errorFields' in err) {
         return
       }
       message.error(resolveApiErrorMessage(err, '请求失败，请稍后再试。'))
     }
-  }, [closeEditModal, editingScope, form, message, user?.two_factor_enabled])
+  }, [closeEditModal, editingScope, form, message])
 
   const columns: TableColumnsType<AdminScope> = useMemo(
     () => [
@@ -249,32 +235,6 @@ export default function ScopeManagementPage() {
           </Form>
         </Space>
       </Modal>
-
-      <DangerousActionTwoFactorModal
-        open={twoFactorPromptOpen}
-        title="二步验证后修改权限分类"
-        description="修改权限分类会影响危险操作的鉴权要求，请先完成二步验证。"
-        loading={saving}
-        onCancel={() => setTwoFactorPromptOpen(false)}
-        onConfirm={async (code) => {
-          if (!editingScope) {
-            return
-          }
-          try {
-            const values = await form.validateFields()
-            setSaving(true)
-            const updated = await updateScope(editingScope.scope, { category: values.category }, code)
-            setScopes((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
-            message.success(`已更新 ${updated.scope} 的分类`)
-            closeEditModal()
-            setTwoFactorPromptOpen(false)
-          } catch (err) {
-            message.error(resolveApiErrorMessage(err, '请求失败，请稍后再试。'))
-          } finally {
-            setSaving(false)
-          }
-        }}
-      />
     </Flex>
   )
 }

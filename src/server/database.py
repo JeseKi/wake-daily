@@ -83,6 +83,17 @@ def init_database() -> None:
     except Exception as e:
         logger.warning(f"引导管理员失败（可忽略开发环境）：{e}")
 
+    try:
+        from src.server.journal.bootstrap import seed_default_daily_questions
+
+        db = SessionLocal()
+        try:
+            seed_default_daily_questions(db)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(f"引导每日问题失败（可忽略开发环境）：{e}")
+
 
 def import_all_models() -> None:
     """导入所有模型。"""
@@ -93,6 +104,7 @@ def import_all_models() -> None:
         from src.server.oauth import models as _4  # noqa: F401
         from src.server.oauth_provider import models as _5  # noqa: F401
         from src.server.providers import models as _6  # noqa: F401
+        from src.server.journal import models as _7  # noqa: F401
     except Exception as e:
         logger.warning(f"导入模型时出现警告：{e}")
 

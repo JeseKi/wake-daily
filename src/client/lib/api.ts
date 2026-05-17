@@ -2,8 +2,6 @@ import axios, { type AxiosError, type AxiosRequestConfig } from 'axios'
 import { clearTokens, getAccessToken, setTokens } from './tokenStorage'
 import type { TokenResponse } from './types'
 
-export const TWO_FACTOR_CODE_HEADER = 'X-2FA-Code'
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   withCredentials: true,
@@ -64,16 +62,6 @@ async function requestRefreshToken(): Promise<string | null> {
 }
 
 type RetryableConfig = AxiosRequestConfig & { _retry?: boolean }
-
-export function buildTwoFactorHeaders(code?: string): Record<string, string> | undefined {
-  const normalizedCode = code?.trim()
-  if (!normalizedCode) {
-    return undefined
-  }
-  return {
-    [TWO_FACTOR_CODE_HEADER]: normalizedCode,
-  }
-}
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken()

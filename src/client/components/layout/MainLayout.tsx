@@ -19,6 +19,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   DashboardOutlined,
+  HistoryOutlined,
   SettingOutlined,
   SafetyOutlined,
   TabletOutlined,
@@ -88,6 +89,9 @@ export default function MainLayout() {
     if (location.pathname.startsWith('/admin')) {
       return ['admin']
     }
+    if (location.pathname.startsWith('/journal/recent')) {
+      return ['recent']
+    }
     if (location.pathname === '/example') {
       return ['example']
     }
@@ -102,15 +106,16 @@ export default function MainLayout() {
       {
         key: 'dashboard-group',
         icon: <DashboardOutlined />,
-        label: '工作台',
+        label: '觉知日记',
         children: [
           {
             key: 'dashboard',
-            label: <Link to="/dashboard">首页</Link>,
+            label: <Link to="/dashboard">今日书写</Link>,
           },
           {
-            key: 'example',
-            label: <Link to="/example">示例模块</Link>,
+            key: 'recent',
+            icon: <HistoryOutlined />,
+            label: <Link to="/journal/recent">最近回看</Link>,
           },
         ],
       },
@@ -263,7 +268,7 @@ export default function MainLayout() {
                   className="text-base font-semibold"
                   style={{ color: token.colorTextHeading, whiteSpace: 'nowrap' }}
                 >
-                  Fullstack Template
+                  觉知日记
                 </Link>
               )}
               <Button
@@ -455,9 +460,9 @@ export default function MainLayout() {
             {selectedKeys[0] === 'admin'
               ? '管理员面板'
               : selectedKeys[0] === 'dashboard'
-                ? '工作台'
-                : selectedKeys[0] === 'example'
-                  ? '示例模块'
+                ? '今日书写'
+                : selectedKeys[0] === 'recent'
+                  ? '最近回看'
                   : ''}
           </Typography.Title>
         </Header>

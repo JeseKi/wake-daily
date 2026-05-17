@@ -10,7 +10,9 @@ import {
   type ThemePreference,
 } from '../contexts/ThemeContext'
 
-const STORAGE_KEY = 'fullstack-template-theme'
+const STORAGE_KEY = 'wake-daily-theme'
+const THEME_VERSION_KEY = 'wake-daily-theme-version'
+const THEME_VERSION = '2'
 const DARK_MEDIA_QUERY = '(prefers-color-scheme: dark)'
 
 function resolveSystemTheme(): ResolvedTheme {
@@ -26,12 +28,18 @@ function resolveStoredPreference(): ThemePreference {
     return 'system'
   }
 
+  if (window.localStorage.getItem(THEME_VERSION_KEY) !== THEME_VERSION) {
+    window.localStorage.setItem(THEME_VERSION_KEY, THEME_VERSION)
+    window.localStorage.setItem(STORAGE_KEY, 'light')
+    return 'light'
+  }
+
   const stored = window.localStorage.getItem(STORAGE_KEY)
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
     return stored
   }
 
-  return 'system'
+  return 'light'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
