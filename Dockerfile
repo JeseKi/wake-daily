@@ -12,8 +12,9 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY .env .
 COPY requirements.txt .
-RUN pip install uv
-RUN uv pip install --no-cache-dir -r requirements.txt --system
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade pip \
+    && pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv
+RUN uv pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir -r requirements.txt --system
 
 COPY src/server/ ./src/server/
 COPY --from=builder /app/dist ./dist
