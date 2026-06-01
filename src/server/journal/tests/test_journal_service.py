@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -10,8 +10,12 @@ from src.server.auth.schemas import UserRole
 from src.server.journal.dao import DailyQuestionDAO
 from src.server.journal.models import DailyQuestion
 from src.server.journal.schemas import (
+    AwarenessSessionCreate,
+    AwarenessSessionReviewUpdate,
     DailyQuestionCreate,
+    JournalClassCreate,
     JournalEntryCreate,
+    ResonanceItemCreate,
 )
 from src.server.journal import service
 
@@ -150,3 +154,75 @@ def test_deleted_question_keeps_entry_readable(test_db_session: Session):
     assert recent[0].id == entry.id
     assert recent[0].question_content == "已删除的问题"
 
+
+def test_awareness_session_binding_growth_and_resonance(test_db_session: Session):
+    teacher = _create_user(test_db_session, "teacher_user")
+    student = _create_user(test_db_session, "student_user")
+
+    journal_class = service.create_class(
+        test_db_session,
+        JournalClassCreate(name="清晨一班"),
+        teacher,
+    )
+    binding = service.bind_class(
+        test_db_session,
+        binding_code=journal_class.binding_code,
+        current_user=student,
+    )
+    assert binding.is_bound is True
+    assert binding.class_info is not None
+    assert binding.class_info.name == "清晨一班"
+
+    session = service.create_awareness_session(
+        test_db_session,
+        AwarenessSessionCreate(
+            objective_events=["我觉得他总是第一个到教室", "她把书放在桌上"],
+            selected_event_index=0,
+            emotion_label="焦虑",
+            emotion_note="看到同学先完成时，身体变紧。",
+            present_anchor="窗台上有一滴水。",
+        ),
+        student,
+        today=datetime.now(timezone.utc).date(),
+    )
+
+    assert session.class_id == journal_class.id
+    assert [item.word for item in session.objectivity_warnings] == ["我", "觉得", "总是"]
+
+    reviewed = service.update_awareness_session_review(
+        test_db_session,
+        session_id=session.id,
+        payload=AwarenessSessionReviewUpdate(
+            review_score=4,
+            review_comment="记录清楚。",
+            reward_label="观察清晰",
+        ),
+        current_user=teacher,
+    )
+    assert reviewed.review_score == 4
+    assert reviewed.reward_label == "观察清晰"
+
+    resonance = service.create_resonance_item(
+        test_db_session,
+        session_id=session.id,
+        payload=ResonanceItemCreate(excerpt=None),
+        current_user=teacher,
+    )
+    feedback = service.create_resonance_feedback(
+        test_db_session,
+        item_id=resonance.id,
+        current_user=student,
+    )
+    repeat_feedback = service.create_resonance_feedback(
+        test_db_session,
+        item_id=resonance.id,
+        current_user=student,
+    )
+
+    growth = service.get_growth(test_db_session, current_user=student)
+
+    assert feedback.empathy_count == 1
+    assert repeat_feedback.empathy_count == 1
+    assert growth.streak_days == 1
+    assert growth.tree_stage == "幼苗"
+    assert "首次完成三关觉察" in growth.badges

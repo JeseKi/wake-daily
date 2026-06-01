@@ -23,6 +23,8 @@ import {
   SettingOutlined,
   SafetyOutlined,
   TabletOutlined,
+  BulbOutlined,
+  FireOutlined,
 } from '@ant-design/icons'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
@@ -92,6 +94,12 @@ export default function MainLayout() {
     if (location.pathname.startsWith('/journal/recent')) {
       return ['recent']
     }
+    if (location.pathname.startsWith('/journal/growth')) {
+      return ['growth']
+    }
+    if (location.pathname.startsWith('/journal/resonance')) {
+      return ['resonance']
+    }
     if (location.pathname === '/example') {
       return ['example']
     }
@@ -115,7 +123,17 @@ export default function MainLayout() {
           {
             key: 'recent',
             icon: <HistoryOutlined />,
-            label: <Link to="/journal/recent">最近回看</Link>,
+            label: <Link to="/journal/recent">我的觉察本</Link>,
+          },
+          {
+            key: 'growth',
+            icon: <FireOutlined />,
+            label: <Link to="/journal/growth">我的成长</Link>,
+          },
+          {
+            key: 'resonance',
+            icon: <BulbOutlined />,
+            label: <Link to="/journal/resonance">共振墙</Link>,
           },
         ],
       },
@@ -462,8 +480,12 @@ export default function MainLayout() {
               : selectedKeys[0] === 'dashboard'
                 ? '今日书写'
                 : selectedKeys[0] === 'recent'
-                  ? '最近回看'
-                  : ''}
+                  ? '我的觉察本'
+                  : selectedKeys[0] === 'growth'
+                    ? '我的成长'
+                    : selectedKeys[0] === 'resonance'
+                      ? '共振墙'
+                      : ''}
           </Typography.Title>
         </Header>
         <Content style={{ padding: '24px 16px 48px' }}>

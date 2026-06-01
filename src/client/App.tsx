@@ -3,6 +3,8 @@ import MainLayout from './components/layout/MainLayout'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ExamplePage from './pages/dashboard/ExamplePage'
 import RecentJournalPage from './pages/journal/RecentJournalPage'
+import GrowthPage from './pages/journal/GrowthPage'
+import ResonanceWallPage from './pages/journal/ResonanceWallPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import SecurityPage from './pages/profile/SecurityPage'
 import DevicesPage from './pages/profile/DevicesPage'
@@ -55,6 +57,8 @@ export default function App() {
             >
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/journal/recent" element={<RecentJournalPage />} />
+              <Route path="/journal/growth" element={<GrowthPage />} />
+              <Route path="/journal/resonance" element={<ResonanceWallPage />} />
               <Route path="/example" element={<ExamplePage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/security" element={<SecurityPage />} />

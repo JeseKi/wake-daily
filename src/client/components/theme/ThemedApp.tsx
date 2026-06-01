@@ -13,16 +13,16 @@ export default function ThemedApp() {
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: isDark ? '#ffd2a8' : '#b15f3a',
-          colorInfo: isDark ? '#ffd2a8' : '#b15f3a',
-          colorSuccess: isDark ? '#8fb276' : '#6f8f54',
-          colorWarning: isDark ? '#e0ad63' : '#b8792f',
-          colorError: isDark ? '#e07a68' : '#b84a3c',
+          colorPrimary: isDark ? '#c8d7bc' : '#66715c',
+          colorInfo: isDark ? '#b8d1ca' : '#6f8f8a',
+          colorSuccess: isDark ? '#a8c39b' : '#6f8f54',
+          colorWarning: isDark ? '#d0b57d' : '#8b7355',
+          colorError: isDark ? '#d79a91' : '#9b5a50',
           borderRadius: 8,
-          colorBgBase: isDark ? '#6d5749' : '#fffaf4',
-          colorBgLayout: isDark ? '#6d5749' : '#fbf6ef',
-          colorTextBase: isDark ? '#fff4e8' : '#2b211b',
-          colorBorder: isDark ? 'rgba(255, 210, 168, 0.24)' : 'rgba(156, 119, 88, 0.26)',
+          colorBgBase: isDark ? '#2f3c38' : '#f6faf5',
+          colorBgLayout: isDark ? '#2f3c38' : '#edf5ee',
+          colorTextBase: isDark ? '#edf5ee' : '#26362f',
+          colorBorder: isDark ? 'rgba(200, 215, 188, 0.22)' : 'rgba(111, 143, 138, 0.24)',
           fontFamily:
             "'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, -apple-system, sans-serif",
         },
@@ -33,11 +33,11 @@ export default function ThemedApp() {
             paddingInline: 16,
           },
           Layout: {
-            headerBg: isDark ? '#7c6555' : '#fffaf4',
+            headerBg: isDark ? '#34443f' : '#f6faf5',
             bodyBg: 'transparent',
           },
           Card: {
-            borderRadiusLG: 12,
+            borderRadiusLG: 8,
           },
         },
       }}

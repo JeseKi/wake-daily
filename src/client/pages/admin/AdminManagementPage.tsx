@@ -1,9 +1,10 @@
-import { KeyOutlined, LockOutlined, QuestionCircleOutlined, TeamOutlined } from '@ant-design/icons'
+import { KeyOutlined, LockOutlined, ProfileOutlined, QuestionCircleOutlined, TeamOutlined } from '@ant-design/icons'
 import { Tabs } from 'antd'
 import UserManagementPage from './UserManagementPage'
 import PermissionManagementPage from './PermissionManagementPage'
 import ScopeManagementPage from './ScopeManagementPage'
 import JournalQuestionManagementPage from './JournalQuestionManagementPage'
+import JournalV1ManagementPage from './JournalV1ManagementPage'
 
 const tabItems = [
   {
@@ -25,6 +26,16 @@ const tabItems = [
       </span>
     ),
     children: <JournalQuestionManagementPage />,
+  },
+  {
+    key: 'journal-v1',
+    label: (
+      <span>
+        <ProfileOutlined />
+        觉察日记
+      </span>
+    ),
+    children: <JournalV1ManagementPage />,
   },
   {
     key: 'scopes',

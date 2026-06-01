@@ -131,3 +131,80 @@ def test_normal_user_cannot_manage_questions(test_client, init_test_database):
     resp = test_client.get("/api/admin/journal/questions", headers=headers)
     assert resp.status_code == HTTPStatus.FORBIDDEN
 
+
+def test_awareness_journal_router_flow(test_client, init_test_database):
+    admin_headers = _login_admin(test_client)
+    student_headers = _register_and_login(test_client, "awareness_router_user")
+
+    class_resp = test_client.post(
+        "/api/admin/journal/classes",
+        headers=admin_headers,
+        json={"name": "清晨二班", "is_active": True},
+    )
+    assert class_resp.status_code == HTTPStatus.CREATED, class_resp.text
+    journal_class = class_resp.json()
+
+    binding_resp = test_client.post(
+        "/api/journal/classes/bind",
+        headers=student_headers,
+        json={"binding_code": journal_class["binding_code"]},
+    )
+    assert binding_resp.status_code == HTTPStatus.OK, binding_resp.text
+    assert binding_resp.json()["class_info"]["name"] == "清晨二班"
+
+    create_resp = test_client.post(
+        "/api/journal/sessions",
+        headers=student_headers,
+        json={
+            "objective_events": ["我觉得他总是看向窗外", "她合上练习册"],
+            "selected_event_index": 0,
+            "emotion_label": "困惑",
+            "emotion_note": "不知道对方是否在听课。",
+            "present_anchor": "墙边有一条很淡的影子。",
+        },
+    )
+    assert create_resp.status_code == HTTPStatus.CREATED, create_resp.text
+    session = create_resp.json()
+    assert [item["word"] for item in session["objectivity_warnings"]] == [
+        "我",
+        "觉得",
+        "总是",
+    ]
+
+    review_resp = test_client.patch(
+        f"/api/admin/journal/sessions/{session['id']}/review",
+        headers=admin_headers,
+        json={
+            "review_score": 5,
+            "review_comment": "第三关很具体。",
+            "reward_label": "当下锚点清晰",
+        },
+    )
+    assert review_resp.status_code == HTTPStatus.OK, review_resp.text
+    assert review_resp.json()["reward_label"] == "当下锚点清晰"
+
+    resonance_resp = test_client.post(
+        f"/api/admin/journal/sessions/{session['id']}/resonance",
+        headers=admin_headers,
+        json={"excerpt": None},
+    )
+    assert resonance_resp.status_code == HTTPStatus.CREATED, resonance_resp.text
+    resonance = resonance_resp.json()
+
+    feedback_resp = test_client.post(
+        f"/api/journal/resonance/{resonance['id']}/empathy",
+        headers=student_headers,
+    )
+    assert feedback_resp.status_code == HTTPStatus.OK, feedback_resp.text
+    assert feedback_resp.json()["empathy_count"] == 1
+
+    growth_resp = test_client.get("/api/journal/growth", headers=student_headers)
+    assert growth_resp.status_code == HTTPStatus.OK, growth_resp.text
+    assert growth_resp.json()["tree_stage"] == "幼苗"
+
+    dashboard_resp = test_client.get(
+        "/api/admin/journal/dashboard",
+        headers=admin_headers,
+    )
+    assert dashboard_resp.status_code == HTTPStatus.OK, dashboard_resp.text
+    assert dashboard_resp.json()["student_count"] == 1

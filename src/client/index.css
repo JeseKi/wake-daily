@@ -8,31 +8,37 @@
 }
 
 html[data-theme='light'] {
-  --app-bg: #fbf6ef;
-  --app-bg-soft: #fffaf4;
-  --app-text-primary: #2b211b;
-  --app-text-secondary: #7a6658;
-  --app-link: #b15f3a;
-  --app-elevated-bg: rgba(255, 250, 244, 0.94);
-  --app-border-color: rgba(156, 119, 88, 0.26);
-  --app-card-shadow: 0 16px 38px rgba(96, 55, 32, 0.12);
-  --app-header-shadow: 0 2px 12px rgba(96, 55, 32, 0.08);
-  --app-floating-shadow: 0 12px 28px rgba(96, 55, 32, 0.14);
-  --app-surface-muted: #f4eadf;
+  --app-bg: #edf5ee;
+  --app-bg-soft: #f8fbf7;
+  --app-text-primary: #26362f;
+  --app-text-secondary: #6a7d73;
+  --app-link: #66715c;
+  --app-elevated-bg: rgba(255, 255, 255, 0.94);
+  --app-border-color: rgba(111, 143, 138, 0.24);
+  --app-card-shadow: 0 16px 38px rgba(47, 70, 61, 0.08);
+  --app-header-shadow: 0 2px 12px rgba(47, 70, 61, 0.07);
+  --app-floating-shadow: 0 12px 28px rgba(47, 70, 61, 0.11);
+  --app-surface-muted: #e7eee8;
+  --app-water-bg: #f3faf9;
+  --app-water-border: #b8d1ca;
+  --app-tree: #66715c;
 }
 
 html[data-theme='dark'] {
-  --app-bg: #6d5749;
-  --app-bg-soft: #7c6555;
-  --app-text-primary: #fff4e8;
-  --app-text-secondary: #ead0bc;
-  --app-link: #ffd2a8;
-  --app-elevated-bg: rgba(92, 71, 58, 0.96);
-  --app-border-color: rgba(255, 210, 168, 0.24);
-  --app-card-shadow: 0 18px 44px rgba(72, 48, 36, 0.28);
-  --app-header-shadow: 0 8px 26px rgba(72, 48, 36, 0.22);
-  --app-floating-shadow: 0 16px 32px rgba(72, 48, 36, 0.3);
-  --app-surface-muted: #806756;
+  --app-bg: #2f3c38;
+  --app-bg-soft: #34443f;
+  --app-text-primary: #edf5ee;
+  --app-text-secondary: #b9c8bf;
+  --app-link: #c8d7bc;
+  --app-elevated-bg: rgba(52, 68, 63, 0.96);
+  --app-border-color: rgba(200, 215, 188, 0.22);
+  --app-card-shadow: 0 18px 44px rgba(22, 34, 29, 0.26);
+  --app-header-shadow: 0 8px 26px rgba(22, 34, 29, 0.2);
+  --app-floating-shadow: 0 16px 32px rgba(22, 34, 29, 0.28);
+  --app-surface-muted: #42554f;
+  --app-water-bg: #344c49;
+  --app-water-border: #6f8f8a;
+  --app-tree: #c8d7bc;
 }
 
 html,
@@ -43,7 +49,9 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, var(--app-bg-soft) 0%, var(--app-bg) 48%, var(--app-bg) 100%);
+  background:
+    radial-gradient(circle at 18% 4%, rgba(255, 255, 255, 0.72), transparent 32%),
+    linear-gradient(180deg, var(--app-bg-soft) 0%, var(--app-bg) 56%, var(--app-bg) 100%);
   color: var(--app-text-primary);
   transition:
     background-color 0.25s ease,
@@ -70,4 +78,55 @@ a {
 
 .theme-subtle-surface {
   background: var(--app-surface-muted);
+}
+
+.forest-card {
+  border-color: var(--app-border-color);
+  box-shadow: var(--app-card-shadow);
+}
+
+.water-surface-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), var(--app-water-bg)),
+    var(--app-water-bg);
+  border-color: var(--app-water-border);
+}
+
+.growth-tree-card {
+  min-height: 340px;
+  padding: 16px;
+}
+
+.growth-tree-stage {
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(231, 238, 232, 0.92), rgba(184, 209, 202, 0.28));
+  color: var(--app-tree);
+  font-size: 72px;
+  line-height: 1;
+}
+
+.resonance-forest {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.resonance-tree-card {
+  border-color: rgba(111, 143, 138, 0.24);
+  box-shadow: 0 12px 30px rgba(47, 70, 61, 0.08);
+}
+
+.resonance-tree-card::before {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: rgba(184, 209, 202, 0.75);
+  box-shadow: 0 0 24px rgba(184, 209, 202, 0.72);
 }

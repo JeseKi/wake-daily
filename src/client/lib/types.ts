@@ -250,6 +250,115 @@ export interface ReliefFeedback {
   has_relief_feedback: boolean
 }
 
+export interface JournalClass {
+  id: number
+  name: string
+  binding_code: string
+  created_by_user_id: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface JournalClassPayload {
+  name: string
+  is_active: boolean
+}
+
+export interface JournalClassUpdatePayload {
+  name?: string
+  is_active?: boolean
+}
+
+export interface JournalBinding {
+  is_bound: boolean
+  class_info: JournalClass | null
+}
+
+export interface ObjectivityWarning {
+  event_index: number
+  word: string
+  message: string
+}
+
+export interface AwarenessSessionPayload {
+  objective_events: string[]
+  selected_event_index: number
+  emotion_label: string
+  emotion_note: string
+  present_anchor: string
+}
+
+export interface AwarenessSessionReviewPayload {
+  review_score?: number | null
+  review_comment?: string | null
+  reward_label?: string | null
+}
+
+export interface AwarenessSession {
+  id: number
+  user_id: number
+  class_id: number
+  objective_events: string[]
+  selected_event_index: number
+  emotion_label: string
+  emotion_note: string
+  present_anchor: string
+  objectivity_warnings: ObjectivityWarning[]
+  submitted_on: string
+  review_score: number | null
+  review_comment: string | null
+  reward_label: string | null
+  reviewed_by_user_id: number | null
+  reviewed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminAwarenessSession extends AwarenessSession {
+  student_username: string
+  student_name: string | null
+  class_name: string
+  is_collected_to_resonance: boolean
+}
+
+export interface Growth {
+  streak_days: number
+  total_sessions: number
+  tree_stage: string
+  badges: string[]
+}
+
+export interface ResonanceItem {
+  id: number
+  session_id: number
+  class_id: number
+  excerpt: string
+  empathy_count: number
+  has_empathy_feedback: boolean
+  created_at: string
+}
+
+export interface ResonanceItemPayload {
+  excerpt?: string | null
+}
+
+export interface ResonanceFeedback {
+  item_id: number
+  empathy_count: number
+  has_empathy_feedback: boolean
+}
+
+export interface JournalAdminDashboard {
+  class_count: number
+  student_count: number
+  submitted_today_count: number
+  submission_rate: number
+  total_sessions: number
+  resonance_count: number
+  emotion_counts: Record<string, number>
+}
+
 export interface ItemPayload {
   name: string
 }
