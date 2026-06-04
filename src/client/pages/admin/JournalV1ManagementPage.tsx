@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Empty,
   Flex,
   Form,
   Input,
@@ -16,7 +17,7 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
+import { EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { resolveApiErrorMessage } from '../../lib/error'
 import {
@@ -191,17 +192,37 @@ function ClassesTab() {
 
 function ReviewTab() {
   const { message } = App.useApp()
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768,
+  )
   const [classes, setClasses] = useState<JournalClass[]>([])
   const [classId, setClassId] = useState<number>()
   const [sessions, setSessions] = useState<AdminAwarenessSession[]>([])
   const [loading, setLoading] = useState(false)
   const [reviewing, setReviewing] = useState<AdminAwarenessSession | null>(null)
+  const [detailSessionId, setDetailSessionId] = useState<number | null>(null)
   const [form] = Form.useForm<{ review_comment: string }>()
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const classOptions = useMemo(
     () => classes.map((item) => ({ value: item.id, label: item.name })),
     [classes],
   )
+
+  const detailSession = useMemo(() => {
+    if (!detailSessionId) {
+      return null
+    }
+    return sessions.find((session) => session.id === detailSessionId) ?? null
+  }, [detailSessionId, sessions])
 
   const loadClasses = useCallback(async () => {
     setClasses(await listJournalClasses())
@@ -227,6 +248,7 @@ function ReviewTab() {
   }, [loadSessions])
 
   const openReview = (session: AdminAwarenessSession) => {
+    setDetailSessionId(null)
     setReviewing(session)
     form.setFieldsValue({
       review_comment: session.review_comment ?? '',
@@ -287,55 +309,81 @@ function ReviewTab() {
         </Button>
       </Flex>
       <Alert type="info" showIcon message="教师批阅只对学生本人可见；共振墙收录会匿名展示片段。" />
-      <Table
-        rowKey="id"
-        loading={loading}
-        dataSource={sessions}
-        expandable={{
-          expandedRowRender: (session) => (
-            <Space direction="vertical" size={10} style={{ width: '100%' }}>
-              {session.entry_mode === 'free_reflection_v1' ? (
-                <AdminFreeReflection session={session} />
-              ) : (
-                <AdminLegacyAwareness session={session} />
-              )}
-            </Space>
-          ),
-        }}
-        columns={[
-          { title: '日期', dataIndex: 'submitted_on' },
-          { title: '学生', render: (_, item) => item.student_name || item.student_username },
-          { title: '班级', dataIndex: 'class_name' },
-          {
-            title: '类型',
-            render: (_, item) =>
-              item.entry_mode === 'free_reflection_v1' ? '自由书写' : item.emotion_label,
-          },
-          {
-            title: '批阅',
-            render: (_, item) =>
-              item.reviewed_at ? <Tag color="green">已批阅</Tag> : <Tag>未批阅</Tag>,
-          },
-          {
-            title: '共振墙',
-            render: (_, item) =>
-              item.is_collected_to_resonance ? <Tag color="cyan">已收录</Tag> : <Tag>未收录</Tag>,
-          },
-          {
-            title: '操作',
-            render: (_, item) => (
-              <Space>
-                <Button onClick={() => openReview(item)}>批阅</Button>
-                {item.is_collected_to_resonance ? (
-                  <Button onClick={() => handleUncollect(item)}>取消收录</Button>
+      {isMobile ? (
+        <MobileReviewList
+          loading={loading}
+          sessions={sessions}
+          onOpenDetail={(session) => setDetailSessionId(session.id)}
+        />
+      ) : (
+        <Table
+          rowKey="id"
+          loading={loading}
+          dataSource={sessions}
+          expandable={{
+            expandedRowRender: (session) => (
+              <Space direction="vertical" size={10} style={{ width: '100%' }}>
+                {session.entry_mode === 'free_reflection_v1' ? (
+                  <AdminFreeReflection session={session} />
                 ) : (
-                  <Button onClick={() => handleCollect(item)}>匿名收录</Button>
+                  <AdminLegacyAwareness session={session} />
                 )}
               </Space>
             ),
-          },
-        ]}
-      />
+          }}
+          columns={[
+            { title: '日期', dataIndex: 'submitted_on' },
+            { title: '学生', render: (_, item) => item.student_name || item.student_username },
+            { title: '班级', dataIndex: 'class_name' },
+            {
+              title: '类型',
+              render: (_, item) =>
+                item.entry_mode === 'free_reflection_v1' ? '自由书写' : item.emotion_label,
+            },
+            {
+              title: '批阅',
+              render: (_, item) =>
+                item.reviewed_at ? <Tag color="green">已批阅</Tag> : <Tag>未批阅</Tag>,
+            },
+            {
+              title: '共振墙',
+              render: (_, item) =>
+                item.is_collected_to_resonance ? <Tag color="cyan">已收录</Tag> : <Tag>未收录</Tag>,
+            },
+            {
+              title: '操作',
+              render: (_, item) => (
+                <Space>
+                  <Button onClick={() => openReview(item)}>批阅</Button>
+                  {item.is_collected_to_resonance ? (
+                    <Button onClick={() => handleUncollect(item)}>取消收录</Button>
+                  ) : (
+                    <Button onClick={() => handleCollect(item)}>匿名收录</Button>
+                  )}
+                </Space>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      <Modal
+        title={detailSession ? resolveSessionTitle(detailSession) : '日记详情'}
+        open={Boolean(detailSession)}
+        onCancel={() => setDetailSessionId(null)}
+        footer={null}
+        width="95%"
+        destroyOnClose
+      >
+        {detailSession && (
+          <SessionDetail
+            session={detailSession}
+            onReview={() => openReview(detailSession)}
+            onCollect={() => handleCollect(detailSession)}
+            onUncollect={() => handleUncollect(detailSession)}
+          />
+        )}
+      </Modal>
 
       <Modal
         title="陪伴式回应"
@@ -355,6 +403,120 @@ function ReviewTab() {
       </Modal>
     </Flex>
   )
+}
+
+function MobileReviewList({
+  loading,
+  sessions,
+  onOpenDetail,
+}: {
+  loading: boolean
+  sessions: AdminAwarenessSession[]
+  onOpenDetail: (session: AdminAwarenessSession) => void
+}) {
+  if (!loading && sessions.length === 0) {
+    return (
+      <Card>
+        <Empty description="暂无日记" />
+      </Card>
+    )
+  }
+
+  return (
+    <Flex vertical gap={12}>
+      {loading && sessions.length === 0 ? (
+        <Card loading />
+      ) : (
+        sessions.map((session) => (
+          <Card key={session.id} size="small" bodyStyle={{ padding: 14 }}>
+            <Flex align="center" justify="space-between" gap={12}>
+              <Space direction="vertical" size={4} style={{ minWidth: 0, flex: 1 }}>
+                <Typography.Text strong ellipsis>
+                  {resolveSessionTitle(session)}
+                </Typography.Text>
+                <Space size={6} wrap>
+                  <Typography.Text type="secondary">
+                    {session.student_name || session.student_username}
+                  </Typography.Text>
+                  <Typography.Text type="secondary">{session.submitted_on}</Typography.Text>
+                </Space>
+              </Space>
+              <Button
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => onOpenDetail(session)}
+                style={{ flex: '0 0 auto' }}
+              >
+                详情
+              </Button>
+            </Flex>
+          </Card>
+        ))
+      )}
+    </Flex>
+  )
+}
+
+function SessionDetail({
+  session,
+  onReview,
+  onCollect,
+  onUncollect,
+}: {
+  session: AdminAwarenessSession
+  onReview: () => void
+  onCollect: () => void
+  onUncollect: () => void
+}) {
+  return (
+    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+      <Space size={6} wrap>
+        <Typography.Text type="secondary">
+          {session.student_name || session.student_username}
+        </Typography.Text>
+        <Typography.Text type="secondary">{session.class_name}</Typography.Text>
+        <Typography.Text type="secondary">{session.submitted_on}</Typography.Text>
+        {session.reviewed_at ? <Tag color="green">已批阅</Tag> : <Tag>未批阅</Tag>}
+        {session.is_collected_to_resonance ? <Tag color="cyan">已收录</Tag> : <Tag>未收录</Tag>}
+      </Space>
+
+      <Space direction="vertical" size={10} style={{ width: '100%' }}>
+        {session.entry_mode === 'free_reflection_v1' ? (
+          <AdminFreeReflection session={session} />
+        ) : (
+          <AdminLegacyAwareness session={session} />
+        )}
+      </Space>
+
+      <Flex gap={8} wrap="wrap" justify="end">
+        <Button onClick={onReview}>批阅</Button>
+        {session.is_collected_to_resonance ? (
+          <Button onClick={onUncollect}>取消收录</Button>
+        ) : (
+          <Button onClick={onCollect}>匿名收录</Button>
+        )}
+      </Flex>
+    </Space>
+  )
+}
+
+function resolveSessionTitle(session: AdminAwarenessSession): string {
+  if (session.entry_mode === 'free_reflection_v1') {
+    return normalizeTitle(session.free_content) || '自由书写日记'
+  }
+  return (
+    normalizeTitle(session.objective_events[session.selected_event_index]) ||
+    normalizeTitle(session.objective_events[0]) ||
+    `${session.emotion_label || '三关觉察'}日记`
+  )
+}
+
+function normalizeTitle(value: string | null | undefined): string {
+  const title = value?.replace(/\s+/g, ' ').trim() ?? ''
+  if (title.length <= 30) {
+    return title
+  }
+  return `${title.slice(0, 30)}...`
 }
 
 function AdminFreeReflection({ session }: { session: AdminAwarenessSession }) {
