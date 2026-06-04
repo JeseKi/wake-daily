@@ -199,6 +199,7 @@ class AdminAwarenessSessionOut(AwarenessSessionOut):
     student_name: str | None
     class_name: str
     is_collected_to_resonance: bool
+    resonance_item_id: int | None
 
 
 class GrowthOut(BaseModel):

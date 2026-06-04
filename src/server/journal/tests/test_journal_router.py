@@ -194,12 +194,36 @@ def test_awareness_journal_router_flow(test_client, init_test_database):
     assert resonance_resp.status_code == HTTPStatus.CREATED, resonance_resp.text
     resonance = resonance_resp.json()
 
+    admin_sessions_resp = test_client.get(
+        "/api/admin/journal/sessions",
+        headers=admin_headers,
+    )
+    assert admin_sessions_resp.status_code == HTTPStatus.OK, admin_sessions_resp.text
+    admin_session = next(item for item in admin_sessions_resp.json() if item["id"] == session["id"])
+    assert admin_session["is_collected_to_resonance"] is True
+    assert admin_session["resonance_item_id"] == resonance["id"]
+
     feedback_resp = test_client.post(
         f"/api/journal/resonance/{resonance['id']}/empathy",
         headers=student_headers,
     )
     assert feedback_resp.status_code == HTTPStatus.OK, feedback_resp.text
     assert feedback_resp.json()["empathy_count"] == 1
+
+    uncollect_resp = test_client.delete(
+        f"/api/admin/journal/resonance/{resonance['id']}",
+        headers=admin_headers,
+    )
+    assert uncollect_resp.status_code == HTTPStatus.NO_CONTENT, uncollect_resp.text
+
+    admin_sessions_resp = test_client.get(
+        "/api/admin/journal/sessions",
+        headers=admin_headers,
+    )
+    assert admin_sessions_resp.status_code == HTTPStatus.OK, admin_sessions_resp.text
+    admin_session = next(item for item in admin_sessions_resp.json() if item["id"] == session["id"])
+    assert admin_session["is_collected_to_resonance"] is False
+    assert admin_session["resonance_item_id"] is None
 
     growth_resp = test_client.get("/api/journal/growth", headers=student_headers)
     assert growth_resp.status_code == HTTPStatus.OK, growth_resp.text

@@ -352,6 +352,7 @@ export interface AdminAwarenessSession extends AwarenessSession {
   student_name: string | null
   class_name: string
   is_collected_to_resonance: boolean
+  resonance_item_id: number | null
 }
 
 export interface Growth {

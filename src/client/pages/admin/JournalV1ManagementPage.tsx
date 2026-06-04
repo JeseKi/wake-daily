@@ -22,6 +22,7 @@ import { resolveApiErrorMessage } from '../../lib/error'
 import {
   createJournalClass,
   createResonanceItem,
+  deleteResonanceItem,
   fetchJournalAdminDashboard,
   listAdminAwarenessSessions,
   listJournalClasses,
@@ -257,6 +258,19 @@ function ReviewTab() {
     }
   }
 
+  const handleUncollect = async (session: AdminAwarenessSession) => {
+    if (!session.resonance_item_id) {
+      return
+    }
+    try {
+      await deleteResonanceItem(session.resonance_item_id)
+      await loadSessions()
+      message.success('已取消共振墙收录')
+    } catch (err) {
+      message.error(resolveApiErrorMessage(err, '取消收录失败。'))
+    }
+  }
+
   return (
     <Flex vertical gap={16}>
       <Flex gap={12} wrap="wrap">
@@ -312,9 +326,11 @@ function ReviewTab() {
             render: (_, item) => (
               <Space>
                 <Button onClick={() => openReview(item)}>批阅</Button>
-                <Button disabled={item.is_collected_to_resonance} onClick={() => handleCollect(item)}>
-                  匿名收录
-                </Button>
+                {item.is_collected_to_resonance ? (
+                  <Button onClick={() => handleUncollect(item)}>取消收录</Button>
+                ) : (
+                  <Button onClick={() => handleCollect(item)}>匿名收录</Button>
+                )}
               </Space>
             ),
           },

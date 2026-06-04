@@ -421,17 +421,18 @@ def list_admin_awareness_sessions(
 ) -> list[AdminAwarenessSessionOut]:
     rows = JournalAwarenessSessionDAO(db).list_admin(class_id=class_id)
     resonance_dao = JournalResonanceItemDAO(db)
-    return [
-        _build_admin_awareness_session_out(
-            session,
-            student=student,
-            journal_class=journal_class,
-            is_collected_to_resonance=(
-                resonance_dao.get_by_session_id(session.id) is not None
-            ),
+    items = []
+    for session, student, journal_class in rows:
+        resonance_item = resonance_dao.get_by_session_id(session.id, active_only=True)
+        items.append(
+            _build_admin_awareness_session_out(
+                session,
+                student=student,
+                journal_class=journal_class,
+                resonance_item_id=resonance_item.id if resonance_item else None,
+            )
         )
-        for session, student, journal_class in rows
-    ]
+    return items
 
 
 def update_awareness_session_review(
@@ -526,8 +527,9 @@ def create_resonance_item(
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="日记不存在")
 
-    existing = JournalResonanceItemDAO(db).get_by_session_id(session_id)
-    if existing:
+    item_dao = JournalResonanceItemDAO(db)
+    existing = item_dao.get_by_session_id(session_id)
+    if existing and existing.is_active:
         return _build_resonance_item_out(
             db,
             existing,
@@ -542,7 +544,18 @@ def create_resonance_item(
     if not excerpt:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="收录内容不能为空")
 
-    item = JournalResonanceItemDAO(db).create(
+    if existing:
+        item = item_dao.update(
+            existing,
+            {
+                "excerpt": excerpt,
+                "created_by_user_id": current_user.id,
+                "is_active": True,
+            },
+        )
+        return _build_resonance_item_out(db, item, current_user_id=current_user.id)
+
+    item = item_dao.create(
         session_id=session.id,
         class_id=session.class_id,
         source_user_id=session.user_id,
@@ -845,7 +858,7 @@ def _build_admin_awareness_session_out(
     *,
     student: User,
     journal_class: JournalClass,
-    is_collected_to_resonance: bool,
+    resonance_item_id: int | None,
 ) -> AdminAwarenessSessionOut:
     base = _build_awareness_session_out(session).model_dump()
     return AdminAwarenessSessionOut(
@@ -853,7 +866,8 @@ def _build_admin_awareness_session_out(
         student_username=student.username,
         student_name=student.name,
         class_name=journal_class.name,
-        is_collected_to_resonance=is_collected_to_resonance,
+        is_collected_to_resonance=resonance_item_id is not None,
+        resonance_item_id=resonance_item_id,
     )
 
 

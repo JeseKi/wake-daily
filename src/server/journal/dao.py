@@ -398,12 +398,15 @@ class JournalResonanceItemDAO(BaseDAO):
             .first()
         )
 
-    def get_by_session_id(self, session_id: int) -> JournalResonanceItem | None:
-        return (
-            self.db_session.query(JournalResonanceItem)
-            .filter(JournalResonanceItem.session_id == session_id)
-            .first()
+    def get_by_session_id(
+        self, session_id: int, *, active_only: bool = False
+    ) -> JournalResonanceItem | None:
+        query = self.db_session.query(JournalResonanceItem).filter(
+            JournalResonanceItem.session_id == session_id
         )
+        if active_only:
+            query = query.filter(JournalResonanceItem.is_active.is_(True))
+        return query.first()
 
     def list_active(
         self, *, class_id: int | None = None, limit: int = 100
@@ -433,6 +436,15 @@ class JournalResonanceItemDAO(BaseDAO):
     def set_active(self, item: JournalResonanceItem, is_active: bool) -> None:
         item.is_active = is_active
         self.db_session.commit()
+
+    def update(
+        self, item: JournalResonanceItem, values: dict[str, object]
+    ) -> JournalResonanceItem:
+        for key, value in values.items():
+            setattr(item, key, value)
+        self.db_session.commit()
+        self.db_session.refresh(item)
+        return item
 
 
 class JournalResonanceFeedbackDAO(BaseDAO):
