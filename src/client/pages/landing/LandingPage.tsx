@@ -1,12 +1,33 @@
 import { Button, Dropdown, Avatar, Flex, Typography } from 'antd'
 import { LogIn, LogOut, PenLine, User } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MenuProps } from 'antd'
 import { useAuth } from '../../hooks/useAuth'
+import { fetchTodayQuestion } from '../../lib/journal'
+
+const FALLBACK_QUESTION = '如果不用急着变好，今天你最想诚实写下什么？'
 
 export default function LandingPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user, logout } = useAuth()
+  const [todayQuestion, setTodayQuestion] = useState<string>(FALLBACK_QUESTION)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchTodayQuestion()
+      .then((question) => {
+        if (!cancelled && question?.content) {
+          setTodayQuestion(question.content)
+        }
+      })
+      .catch(() => {
+        // 静默失败：未登录、网络异常或暂未配置每日问题时，沿用兜底文案。
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleLogout = async () => {
     await logout()
@@ -85,7 +106,7 @@ export default function LandingPage() {
         <div className="mt-16 border-l-2 border-[var(--app-border-color)] pl-5 text-[var(--app-text-secondary)]">
           <p className="mb-2">今日一问</p>
           <p className="text-xl leading-9 text-[var(--app-text-primary)]">
-            如果不用急着变好，今天你最想诚实写下什么？
+            {todayQuestion}
           </p>
         </div>
       </section>

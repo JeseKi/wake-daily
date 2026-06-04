@@ -47,7 +47,6 @@ router = APIRouter(tags=["觉知日记"])
 )
 async def get_today_question(
     db: Session = Depends(get_db),
-    _: User = Security(get_current_user, scopes=[SCOPE_PROFILE_READ]),
 ):
     def _get():
         return service.get_today_question(db)

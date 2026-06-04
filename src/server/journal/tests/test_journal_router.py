@@ -80,10 +80,13 @@ def test_journal_user_flow(test_client, init_test_database):
     assert recent[0]["has_relief_feedback"] is True
 
 
-def test_journal_requires_authentication(test_client):
+def test_journal_today_question_is_public(test_client, init_test_database):
     resp = test_client.get("/api/journal/today-question")
-    assert resp.status_code == HTTPStatus.UNAUTHORIZED
+    assert resp.status_code == HTTPStatus.OK, resp.text
+    assert resp.json()["content"]
 
+
+def test_journal_requires_authentication(test_client):
     resp = test_client.post(
         "/api/journal/entries",
         json={"question_id": 1, "content": "hello"},
