@@ -7,12 +7,13 @@ import {
   Flex,
   Input,
   Space,
+  Spin,
   Tag,
   Tooltip,
   Typography,
 } from 'antd'
-import { QuestionCircleOutlined, SaveOutlined } from '@ant-design/icons'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { PlayCircleOutlined, QuestionCircleOutlined, SaveOutlined } from '@ant-design/icons'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveApiErrorMessage } from '../../lib/error'
@@ -30,12 +31,18 @@ import type {
   ObjectiveSegment,
 } from '../../lib/types'
 
+const GUIDED_AUDIO_URL =
+  'https://present-files-1317479375.cos.ap-guangzhou.myqcloud.com/present-files-1317479375/1/object_15772eed99ae4acc9332e96bb335f20f_%E7%AC%AC%E4%B8%80%E5%A4%A9%EF%BC%9A%E8%BA%AB%E4%BD%93%E6%89%AB%E6%8F%8F%C2%B7%E6%89%8E%E6%A0%B9%E5%BD%93%E4%B8%8B.mp3'
+
 export default function TodayJournalPage() {
   const { message } = App.useApp()
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [binding, setBinding] = useState<JournalBinding | null>(null)
   const [bindingCode, setBindingCode] = useState('')
   const [loadingBinding, setLoadingBinding] = useState(false)
   const [bindingSubmitting, setBindingSubmitting] = useState(false)
+  const [hasEnteredWriting, setHasEnteredWriting] = useState(false)
+  const [audioLoading, setAudioLoading] = useState(true)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedSession, setSavedSession] = useState<AwarenessSession | null>(null)
@@ -81,6 +88,15 @@ export default function TodayJournalPage() {
       message.error(resolveApiErrorMessage(error, '绑定失败，请检查绑定码。'))
     } finally {
       setBindingSubmitting(false)
+    }
+  }
+
+  const handleEnterWriting = async () => {
+    setHasEnteredWriting(true)
+    try {
+      await audioRef.current?.play()
+    } catch {
+      message.info('如未自动播放，请点击播放条开始引导语音。')
     }
   }
 
@@ -189,24 +205,63 @@ export default function TodayJournalPage() {
       {!savedSession ? (
         <Card className="forest-card free-writing-card">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
-            <Input.TextArea
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="想写什么就写什么。可以不完整，可以重复，也可以只是此刻的一句话。"
-              autoSize={{ minRows: 14, maxRows: 24 }}
-              disabled={saving}
-              style={{ fontSize: 16, lineHeight: 1.9 }}
-            />
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              size="large"
-              onClick={handleSave}
-              loading={saving}
-              disabled={!content.trim()}
-            >
-              提交
-            </Button>
+            <div className="guided-audio-panel">
+              <Flex align="center" justify="space-between" gap={12}>
+                <Typography.Text strong>引导语音</Typography.Text>
+                {audioLoading && (
+                  <Space size={6}>
+                    <Spin size="small" />
+                    <Typography.Text type="secondary">正在加载</Typography.Text>
+                  </Space>
+                )}
+              </Flex>
+              <audio
+                ref={audioRef}
+                className="guided-audio-player"
+                controls
+                preload="metadata"
+                src={GUIDED_AUDIO_URL}
+                onLoadStart={() => setAudioLoading(true)}
+                onLoadedMetadata={() => setAudioLoading(false)}
+                onCanPlay={() => setAudioLoading(false)}
+                onPlaying={() => setAudioLoading(false)}
+                onWaiting={() => setAudioLoading(true)}
+                onError={() => setAudioLoading(false)}
+              >
+                您的浏览器暂不支持音频播放。
+              </audio>
+            </div>
+            {!hasEnteredWriting ? (
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                size="large"
+                onClick={handleEnterWriting}
+              >
+                进入书写
+              </Button>
+            ) : (
+              <>
+                <Input.TextArea
+                  value={content}
+                  onChange={(event) => setContent(event.target.value)}
+                  placeholder="想写什么就写什么。可以不完整，可以重复，也可以只是此刻的一句话。"
+                  autoSize={{ minRows: 14, maxRows: 24 }}
+                  disabled={saving}
+                  style={{ fontSize: 16, lineHeight: 1.9 }}
+                />
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  size="large"
+                  onClick={handleSave}
+                  loading={saving}
+                  disabled={!content.trim()}
+                >
+                  提交
+                </Button>
+              </>
+            )}
           </Space>
         </Card>
       ) : (
