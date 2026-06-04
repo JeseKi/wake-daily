@@ -281,12 +281,39 @@ export interface ObjectivityWarning {
   message: string
 }
 
+export interface AnalysisMark {
+  id: string
+  word: string
+  category: string
+  start: number
+  end: number
+  importance: number
+  question: string
+  is_top: boolean
+}
+
+export interface InquiryRecord {
+  mark_id: string
+  question: string
+  opened_at: string | null
+  answer: string | null
+  updated_at: string | null
+}
+
+export interface ObjectiveSegment {
+  text: string
+  start: number
+  end: number
+  message: string
+}
+
 export interface AwarenessSessionPayload {
-  objective_events: string[]
-  selected_event_index: number
-  emotion_label: string
-  emotion_note: string
-  present_anchor: string
+  content?: string
+  objective_events?: string[]
+  selected_event_index?: number
+  emotion_label?: string
+  emotion_note?: string
+  present_anchor?: string
 }
 
 export interface AwarenessSessionReviewPayload {
@@ -299,12 +326,17 @@ export interface AwarenessSession {
   id: number
   user_id: number
   class_id: number
+  entry_mode: string
+  free_content: string | null
   objective_events: string[]
   selected_event_index: number
   emotion_label: string
   emotion_note: string
   present_anchor: string
   objectivity_warnings: ObjectivityWarning[]
+  analysis_marks: AnalysisMark[]
+  inquiry_records: InquiryRecord[]
+  objective_segments: ObjectiveSegment[]
   submitted_on: string
   review_score: number | null
   review_comment: string | null

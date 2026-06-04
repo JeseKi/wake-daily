@@ -4,7 +4,7 @@
 from datetime import datetime
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class DailyQuestionOut(BaseModel):
@@ -97,12 +97,70 @@ class ObjectivityWarningOut(BaseModel):
     message: str
 
 
+class AnalysisMarkOut(BaseModel):
+    id: str
+    word: str
+    category: str
+    start: int
+    end: int
+    importance: int
+    question: str
+    is_top: bool
+
+
+class InquiryRecordOut(BaseModel):
+    mark_id: str
+    question: str
+    opened_at: datetime | None = None
+    answer: str | None = Field(default=None, max_length=2000)
+    updated_at: datetime | None = None
+
+
+class InquiryRecordUpdate(BaseModel):
+    mark_id: str = Field(..., min_length=1, max_length=32)
+    question: str = Field(..., min_length=1, max_length=500)
+    opened_at: datetime | None = None
+    answer: str | None = Field(default=None, max_length=2000)
+    updated_at: datetime | None = None
+
+
+class InquiryRecordsUpdate(BaseModel):
+    records: list[InquiryRecordUpdate] = Field(default_factory=list, max_length=20)
+
+
+class ObjectiveSegmentOut(BaseModel):
+    text: str
+    start: int
+    end: int
+    message: str
+
+
 class AwarenessSessionCreate(BaseModel):
-    objective_events: list[str] = Field(..., min_length=1, max_length=3)
-    selected_event_index: int = Field(..., ge=0, le=2)
-    emotion_label: str = Field(..., min_length=1, max_length=50)
-    emotion_note: str = Field(..., min_length=1, max_length=2000)
-    present_anchor: str = Field(..., min_length=1, max_length=2000)
+    content: str | None = Field(default=None, min_length=1, max_length=20000)
+    objective_events: list[str] | None = Field(default=None, min_length=1, max_length=3)
+    selected_event_index: int | None = Field(default=None, ge=0, le=2)
+    emotion_label: str | None = Field(default=None, min_length=1, max_length=50)
+    emotion_note: str | None = Field(default=None, min_length=1, max_length=2000)
+    present_anchor: str | None = Field(default=None, min_length=1, max_length=2000)
+
+    @model_validator(mode="after")
+    def validate_flow(self) -> "AwarenessSessionCreate":
+        if self.content is not None:
+            return self
+        missing = [
+            name
+            for name in (
+                "objective_events",
+                "selected_event_index",
+                "emotion_label",
+                "emotion_note",
+                "present_anchor",
+            )
+            if getattr(self, name) is None
+        ]
+        if missing:
+            raise ValueError("content 或完整三关觉察字段必须提供其一")
+        return self
 
 
 class AwarenessSessionReviewUpdate(BaseModel):
@@ -115,12 +173,17 @@ class AwarenessSessionOut(BaseModel):
     id: int
     user_id: int
     class_id: int
+    entry_mode: str
+    free_content: str | None
     objective_events: list[str]
     selected_event_index: int
     emotion_label: str
     emotion_note: str
     present_anchor: str
     objectivity_warnings: list[ObjectivityWarningOut]
+    analysis_marks: list[AnalysisMarkOut]
+    inquiry_records: list[InquiryRecordOut]
+    objective_segments: list[ObjectiveSegmentOut]
     submitted_on: date
     review_score: int | None
     review_comment: str | None

@@ -92,6 +92,23 @@ a {
   border-color: var(--app-water-border);
 }
 
+.free-writing-card textarea {
+  border-color: rgba(111, 143, 138, 0.24);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.free-writing-mark {
+  border-radius: 4px;
+  padding: 0 3px;
+  background: rgba(250, 219, 95, 0.42);
+  color: inherit;
+}
+
+.mark-inquiry-card {
+  border-color: rgba(250, 219, 95, 0.5);
+  background: rgba(255, 251, 230, 0.55);
+}
+
 .growth-tree-card {
   min-height: 340px;
   padding: 16px;

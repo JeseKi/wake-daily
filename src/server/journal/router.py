@@ -24,6 +24,7 @@ from .schemas import (
     DailyQuestionOut,
     DailyQuestionUpdate,
     GrowthOut,
+    InquiryRecordsUpdate,
     JournalEntryCreate,
     JournalEntryOut,
     JournalBindingOut,
@@ -177,6 +178,28 @@ async def list_recent_awareness_sessions(
         )
 
     return await run_in_thread(_list)
+
+
+@router.patch(
+    "/api/journal/sessions/{session_id}/inquiries",
+    response_model=AwarenessSessionOut,
+    summary="保存自由书写追问记录",
+)
+async def update_awareness_session_inquiries(
+    session_id: int,
+    payload: InquiryRecordsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Security(get_current_user, scopes=[SCOPE_PROFILE_WRITE]),
+):
+    def _update():
+        return service.update_awareness_session_inquiries(
+            db,
+            session_id=session_id,
+            payload=payload,
+            current_user=current_user,
+        )
+
+    return await run_in_thread(_update)
 
 
 @router.get(

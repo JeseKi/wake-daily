@@ -1,9 +1,10 @@
 import { App, Alert, Button, Card, Empty, Flex, Select, Space, Spin, Tag, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { resolveApiErrorMessage } from '../../lib/error'
 import { listRecentAwarenessSessions } from '../../lib/journal'
-import type { AwarenessSession } from '../../lib/types'
+import type { AnalysisMark, AwarenessSession } from '../../lib/types'
 
 const dayOptions = [
   { value: 7, label: '最近 7 天' },
@@ -68,36 +69,29 @@ export default function RecentJournalPage() {
               <Space direction="vertical" size={14} style={{ width: '100%' }}>
                 <Flex align="center" justify="space-between" gap={12} wrap="wrap">
                   <Typography.Text strong>{session.submitted_on}</Typography.Text>
-                  <Tag color="green">{session.emotion_label}</Tag>
+                  <Tag color="green">
+                    {session.entry_mode === 'free_reflection_v1' ? '自由书写' : session.emotion_label}
+                  </Tag>
                 </Flex>
-                <Section title="第一关 · 客观记录">
-                  {session.objective_events.map((event, index) => (
-                    <Typography.Paragraph key={index} style={{ marginBottom: 4 }}>
-                      {index + 1}. {event}
-                    </Typography.Paragraph>
-                  ))}
-                </Section>
-                <Section title="第二关 · 情绪标记">
-                  <Typography.Paragraph style={{ marginBottom: 4 }}>
-                    触动事件：{session.objective_events[session.selected_event_index]}
-                  </Typography.Paragraph>
-                  <Typography.Paragraph style={{ marginBottom: 0 }}>
-                    触发点：{session.emotion_note}
-                  </Typography.Paragraph>
-                </Section>
-                <Section title="第三关 · 当下锚点">
-                  <Typography.Paragraph style={{ marginBottom: 0 }}>
-                    {session.present_anchor}
-                  </Typography.Paragraph>
-                </Section>
-                {(session.review_comment || session.reward_label || session.review_score !== null) && (
+                {session.entry_mode === 'free_reflection_v1' ? (
+                  <FreeReflectionReview session={session} />
+                ) : (
+                  <LegacyAwarenessReview session={session} />
+                )}
+                {(session.review_comment ||
+                  (session.entry_mode !== 'free_reflection_v1' &&
+                    (session.reward_label || session.review_score !== null))) && (
                   <Alert
                     type="info"
                     showIcon
                     message="教师回应"
                     description={[
-                      session.review_score !== null ? `评分：${session.review_score}/5` : '',
-                      session.reward_label ? `奖励：${session.reward_label}` : '',
+                      session.entry_mode !== 'free_reflection_v1' && session.review_score !== null
+                        ? `评分：${session.review_score}/5`
+                        : '',
+                      session.entry_mode !== 'free_reflection_v1' && session.reward_label
+                        ? `奖励：${session.reward_label}`
+                        : '',
                       session.review_comment ?? '',
                     ]
                       .filter(Boolean)
@@ -113,7 +107,109 @@ export default function RecentJournalPage() {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function FreeReflectionReview({ session }: { session: AwarenessSession }) {
+  const topMarks = session.analysis_marks.filter((mark) => mark.is_top)
+  return (
+    <>
+      <Section title="原文">
+        <Typography.Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
+          {renderMarkedContent(session.free_content ?? '', topMarks)}
+        </Typography.Paragraph>
+      </Section>
+      {topMarks.length > 0 && (
+        <Section title="系统标记">
+          <Space wrap>
+            {topMarks.map((mark) => (
+              <Tag key={mark.id} color="gold">
+                {mark.word}
+              </Tag>
+            ))}
+          </Space>
+        </Section>
+      )}
+      {session.inquiry_records.length > 0 && (
+        <Section title="追问记录">
+          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            {session.inquiry_records.map((record) => (
+              <Card key={record.mark_id} size="small">
+                <Typography.Paragraph style={{ marginBottom: 6 }}>
+                  {record.question}
+                </Typography.Paragraph>
+                <Typography.Text type="secondary">
+                  {record.answer || '还没有写下答案'}
+                </Typography.Text>
+              </Card>
+            ))}
+          </Space>
+        </Section>
+      )}
+      {session.objective_segments.length > 0 && (
+        <Section title="客观句子">
+          <Space direction="vertical" size={6}>
+            {session.objective_segments.map((segment) => (
+              <Tag key={`${segment.start}-${segment.end}`} color="green">
+                {segment.text}
+              </Tag>
+            ))}
+          </Space>
+        </Section>
+      )}
+    </>
+  )
+}
+
+function LegacyAwarenessReview({ session }: { session: AwarenessSession }) {
+  return (
+    <>
+      <Section title="第一关 · 客观记录">
+        {session.objective_events.map((event, index) => (
+          <Typography.Paragraph key={index} style={{ marginBottom: 4 }}>
+            {index + 1}. {event}
+          </Typography.Paragraph>
+        ))}
+      </Section>
+      <Section title="第二关 · 情绪标记">
+        <Typography.Paragraph style={{ marginBottom: 4 }}>
+          触动事件：{session.objective_events[session.selected_event_index]}
+        </Typography.Paragraph>
+        <Typography.Paragraph style={{ marginBottom: 0 }}>
+          触发点：{session.emotion_note}
+        </Typography.Paragraph>
+      </Section>
+      <Section title="第三关 · 当下锚点">
+        <Typography.Paragraph style={{ marginBottom: 0 }}>
+          {session.present_anchor}
+        </Typography.Paragraph>
+      </Section>
+    </>
+  )
+}
+
+function renderMarkedContent(content: string, marks: AnalysisMark[]) {
+  const nodes: ReactNode[] = []
+  let cursor = 0
+  const sortedMarks = [...marks].sort((a, b) => a.start - b.start)
+  sortedMarks.forEach((mark) => {
+    if (mark.start < cursor) {
+      return
+    }
+    if (mark.start > cursor) {
+      nodes.push(content.slice(cursor, mark.start))
+    }
+    nodes.push(
+      <mark key={mark.id} className="free-writing-mark">
+        {content.slice(mark.start, mark.end)}
+      </mark>,
+    )
+    cursor = mark.end
+  })
+  if (cursor < content.length) {
+    nodes.push(content.slice(cursor))
+  }
+  return nodes
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
       <Typography.Text type="secondary">{title}</Typography.Text>

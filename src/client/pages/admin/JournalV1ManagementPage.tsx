@@ -6,7 +6,6 @@ import {
   Flex,
   Form,
   Input,
-  InputNumber,
   Modal,
   Select,
   Space,
@@ -196,7 +195,7 @@ function ReviewTab() {
   const [sessions, setSessions] = useState<AdminAwarenessSession[]>([])
   const [loading, setLoading] = useState(false)
   const [reviewing, setReviewing] = useState<AdminAwarenessSession | null>(null)
-  const [form] = Form.useForm<{ review_score: number; reward_label: string; review_comment: string }>()
+  const [form] = Form.useForm<{ review_comment: string }>()
 
   const classOptions = useMemo(
     () => classes.map((item) => ({ value: item.id, label: item.name })),
@@ -229,8 +228,6 @@ function ReviewTab() {
   const openReview = (session: AdminAwarenessSession) => {
     setReviewing(session)
     form.setFieldsValue({
-      review_score: session.review_score ?? 3,
-      reward_label: session.reward_label ?? '',
       review_comment: session.review_comment ?? '',
     })
   }
@@ -283,18 +280,11 @@ function ReviewTab() {
         expandable={{
           expandedRowRender: (session) => (
             <Space direction="vertical" size={10} style={{ width: '100%' }}>
-              <Typography.Text type="secondary">客观记录</Typography.Text>
-              {session.objective_events.map((event, index) => (
-                <Typography.Paragraph key={index} style={{ margin: 0 }}>
-                  {index + 1}. {event}
-                </Typography.Paragraph>
-              ))}
-              <Typography.Text type="secondary">情绪标记</Typography.Text>
-              <Typography.Paragraph style={{ margin: 0 }}>
-                {session.emotion_label} · {session.emotion_note}
-              </Typography.Paragraph>
-              <Typography.Text type="secondary">当下锚点</Typography.Text>
-              <Typography.Paragraph style={{ margin: 0 }}>{session.present_anchor}</Typography.Paragraph>
+              {session.entry_mode === 'free_reflection_v1' ? (
+                <AdminFreeReflection session={session} />
+              ) : (
+                <AdminLegacyAwareness session={session} />
+              )}
             </Space>
           ),
         }}
@@ -302,7 +292,11 @@ function ReviewTab() {
           { title: '日期', dataIndex: 'submitted_on' },
           { title: '学生', render: (_, item) => item.student_name || item.student_username },
           { title: '班级', dataIndex: 'class_name' },
-          { title: '情绪', dataIndex: 'emotion_label' },
+          {
+            title: '类型',
+            render: (_, item) =>
+              item.entry_mode === 'free_reflection_v1' ? '自由书写' : item.emotion_label,
+          },
           {
             title: '批阅',
             render: (_, item) =>
@@ -328,24 +322,79 @@ function ReviewTab() {
       />
 
       <Modal
-        title="批阅日记"
+        title="陪伴式回应"
         open={!!reviewing}
         onCancel={() => setReviewing(null)}
         onOk={handleReview}
         okText="保存"
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="review_score" label="评分">
-            <InputNumber min={0} max={5} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="reward_label" label="奖励">
-            <Input placeholder="如：观察清晰、情绪标记准确" />
-          </Form.Item>
-          <Form.Item name="review_comment" label="评价">
-            <Input.TextArea autoSize={{ minRows: 4, maxRows: 8 }} />
+          <Form.Item name="review_comment" label="回应">
+            <Input.TextArea
+              placeholder="写一段陪伴式回应，不打分，不评判。"
+              autoSize={{ minRows: 5, maxRows: 10 }}
+            />
           </Form.Item>
         </Form>
       </Modal>
     </Flex>
+  )
+}
+
+function AdminFreeReflection({ session }: { session: AdminAwarenessSession }) {
+  const topMarks = session.analysis_marks.filter((mark) => mark.is_top)
+  return (
+    <>
+      <Typography.Text type="secondary">原文</Typography.Text>
+      <Typography.Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
+        {session.free_content}
+      </Typography.Paragraph>
+      <Typography.Text type="secondary">系统标记</Typography.Text>
+      {topMarks.length > 0 ? (
+        <Space wrap>
+          {topMarks.map((mark) => (
+            <Tag key={mark.id} color="gold">
+              {mark.word} · {mark.question}
+            </Tag>
+          ))}
+        </Space>
+      ) : (
+        <Tag color="green">更接近事实观察</Tag>
+      )}
+      <Typography.Text type="secondary">追问记录</Typography.Text>
+      {session.inquiry_records.length > 0 ? (
+        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+          {session.inquiry_records.map((record) => (
+            <Card key={record.mark_id} size="small">
+              <Typography.Paragraph style={{ marginBottom: 6 }}>
+                {record.question}
+              </Typography.Paragraph>
+              <Typography.Text>{record.answer || '学生尚未填写答案'}</Typography.Text>
+            </Card>
+          ))}
+        </Space>
+      ) : (
+        <Typography.Text>学生尚未打开追问。</Typography.Text>
+      )}
+    </>
+  )
+}
+
+function AdminLegacyAwareness({ session }: { session: AdminAwarenessSession }) {
+  return (
+    <>
+      <Typography.Text type="secondary">客观记录</Typography.Text>
+      {session.objective_events.map((event, index) => (
+        <Typography.Paragraph key={index} style={{ margin: 0 }}>
+          {index + 1}. {event}
+        </Typography.Paragraph>
+      ))}
+      <Typography.Text type="secondary">情绪标记</Typography.Text>
+      <Typography.Paragraph style={{ margin: 0 }}>
+        {session.emotion_label} · {session.emotion_note}
+      </Typography.Paragraph>
+      <Typography.Text type="secondary">当下锚点</Typography.Text>
+      <Typography.Paragraph style={{ margin: 0 }}>{session.present_anchor}</Typography.Paragraph>
+    </>
   )
 }

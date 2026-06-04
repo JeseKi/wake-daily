@@ -211,3 +211,63 @@ def test_awareness_journal_router_flow(test_client, init_test_database):
     )
     assert dashboard_resp.status_code == HTTPStatus.OK, dashboard_resp.text
     assert dashboard_resp.json()["student_count"] == 1
+
+
+def test_free_reflection_router_flow(test_client, init_test_database):
+    admin_headers = _login_admin(test_client)
+    student_headers = _register_and_login(test_client, "free_reflection_router_user")
+
+    class_resp = test_client.post(
+        "/api/admin/journal/classes",
+        headers=admin_headers,
+        json={"name": "自由书写班", "is_active": True},
+    )
+    assert class_resp.status_code == HTTPStatus.CREATED, class_resp.text
+    journal_class = class_resp.json()
+
+    binding_resp = test_client.post(
+        "/api/journal/classes/bind",
+        headers=student_headers,
+        json={"binding_code": journal_class["binding_code"]},
+    )
+    assert binding_resp.status_code == HTTPStatus.OK, binding_resp.text
+
+    create_resp = test_client.post(
+        "/api/journal/sessions",
+        headers=student_headers,
+        json={"content": "我觉得自己总是太慢。窗边有一小块光。"},
+    )
+    assert create_resp.status_code == HTTPStatus.CREATED, create_resp.text
+    session = create_resp.json()
+    assert session["entry_mode"] == "free_reflection_v1"
+    assert session["free_content"] == "我觉得自己总是太慢。窗边有一小块光。"
+    assert len([item for item in session["analysis_marks"] if item["is_top"]]) == 3
+    assert session["objective_segments"][0]["text"] == "窗边有一小块光。"
+
+    first_mark = session["analysis_marks"][0]
+    inquiry_resp = test_client.patch(
+        f"/api/journal/sessions/{session['id']}/inquiries",
+        headers=student_headers,
+        json={
+            "records": [
+                {
+                    "mark_id": first_mark["id"],
+                    "question": first_mark["question"],
+                    "answer": "我想被允许慢一点。",
+                }
+            ]
+        },
+    )
+    assert inquiry_resp.status_code == HTTPStatus.OK, inquiry_resp.text
+    assert inquiry_resp.json()["inquiry_records"][0]["answer"] == "我想被允许慢一点。"
+
+    review_resp = test_client.patch(
+        f"/api/admin/journal/sessions/{session['id']}/review",
+        headers=admin_headers,
+        json={"review_score": 5, "review_comment": "我读到了你的认真。", "reward_label": "忽略"},
+    )
+    assert review_resp.status_code == HTTPStatus.OK, review_resp.text
+    reviewed = review_resp.json()
+    assert reviewed["review_comment"] == "我读到了你的认真。"
+    assert reviewed["review_score"] is None
+    assert reviewed["reward_label"] is None

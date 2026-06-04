@@ -13,6 +13,8 @@ from src.server.journal.schemas import (
     AwarenessSessionCreate,
     AwarenessSessionReviewUpdate,
     DailyQuestionCreate,
+    InquiryRecordsUpdate,
+    InquiryRecordUpdate,
     JournalClassCreate,
     JournalEntryCreate,
     ResonanceItemCreate,
@@ -226,3 +228,71 @@ def test_awareness_session_binding_growth_and_resonance(test_db_session: Session
     assert growth.streak_days == 1
     assert growth.tree_stage == "幼苗"
     assert "首次完成三关觉察" in growth.badges
+
+
+def test_free_reflection_marks_inquiries_and_response(test_db_session: Session):
+    teacher = _create_user(test_db_session, "free_teacher")
+    student = _create_user(test_db_session, "free_student")
+    journal_class = service.create_class(
+        test_db_session,
+        JournalClassCreate(name="自由书写班"),
+        teacher,
+    )
+    service.bind_class(
+        test_db_session,
+        binding_code=journal_class.binding_code,
+        current_user=student,
+    )
+
+    session = service.create_awareness_session(
+        test_db_session,
+        AwarenessSessionCreate(content="我觉得他总是不理我。窗边有一小块光。"),
+        student,
+        today=date(2026, 6, 4),
+    )
+
+    assert session.entry_mode == "free_reflection_v1"
+    assert session.free_content == "我觉得他总是不理我。窗边有一小块光。"
+    assert {mark.word for mark in session.analysis_marks if mark.is_top} == {
+        "总是",
+        "觉得",
+        "我",
+    }
+    assert session.objective_segments[0].text == "窗边有一小块光。"
+
+    updated = service.update_awareness_session_inquiries(
+        test_db_session,
+        session_id=session.id,
+        payload=InquiryRecordsUpdate(
+            records=[
+                InquiryRecordUpdate(
+                    mark_id=session.analysis_marks[0].id,
+                    question=session.analysis_marks[0].question,
+                    answer="我想被认真听见。",
+                )
+            ]
+        ),
+        current_user=student,
+    )
+    assert updated.inquiry_records[0].answer == "我想被认真听见。"
+
+    reviewed = service.update_awareness_session_review(
+        test_db_session,
+        session_id=session.id,
+        payload=AwarenessSessionReviewUpdate(
+            review_score=5,
+            review_comment="我看见你在努力靠近真实感受。",
+            reward_label="不会保存",
+        ),
+        current_user=teacher,
+    )
+    assert reviewed.review_comment == "我看见你在努力靠近真实感受。"
+    assert reviewed.review_score is None
+    assert reviewed.reward_label is None
+
+
+def test_free_reflection_deduplicates_repeated_top_words():
+    marks = service.analyze_free_content("我不知道我为什么要做这个东西。")
+
+    assert [mark.word for mark in marks] == ["我", "我"]
+    assert [mark.word for mark in marks if mark.is_top] == ["我"]

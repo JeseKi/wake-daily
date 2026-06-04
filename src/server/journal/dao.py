@@ -256,16 +256,24 @@ class JournalAwarenessSessionDAO(BaseDAO):
         present_anchor: str,
         objectivity_warnings_json: str,
         submitted_on: date,
+        entry_mode: str = "awareness_v1",
+        free_content: str | None = None,
+        analysis_marks_json: str = "[]",
+        inquiry_records_json: str = "[]",
     ) -> JournalAwarenessSession:
         item = JournalAwarenessSession(
             user_id=user_id,
             class_id=class_id,
+            entry_mode=entry_mode,
+            free_content=free_content,
             objective_events_json=objective_events_json,
             selected_event_index=selected_event_index,
             emotion_label=emotion_label,
             emotion_note=emotion_note,
             present_anchor=present_anchor,
             objectivity_warnings_json=objectivity_warnings_json,
+            analysis_marks_json=analysis_marks_json,
+            inquiry_records_json=inquiry_records_json,
             submitted_on=submitted_on,
         )
         self.db_session.add(item)

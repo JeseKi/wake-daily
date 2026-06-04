@@ -15,6 +15,7 @@ import type {
   JournalClassUpdatePayload,
   JournalEntry,
   JournalEntryPayload,
+  InquiryRecord,
   ReliefFeedback,
   ResonanceFeedback,
   ResonanceItem,
@@ -88,6 +89,17 @@ export async function listRecentAwarenessSessions(days = 30): Promise<AwarenessS
   const { data } = await api.get<AwarenessSession[]>('/journal/sessions/recent', {
     params: { days },
   })
+  return data
+}
+
+export async function updateAwarenessSessionInquiries(
+  sessionId: number,
+  records: InquiryRecord[],
+): Promise<AwarenessSession> {
+  const { data } = await api.patch<AwarenessSession>(
+    `/journal/sessions/${sessionId}/inquiries`,
+    { records },
+  )
   return data
 }
 
