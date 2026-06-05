@@ -20,6 +20,7 @@ import { resolveApiErrorMessage } from '../../lib/error'
 import {
   bindJournalClass,
   createAwarenessSession,
+  fetchGrowth,
   fetchMyJournalBinding,
   updateAwarenessSessionInquiries,
 } from '../../lib/journal'
@@ -31,8 +32,24 @@ import type {
   ObjectiveSegment,
 } from '../../lib/types'
 
-const GUIDED_AUDIO_URL =
-  'https://present-files-1317479375.cos.ap-guangzhou.myqcloud.com/present-files-1317479375/1/object_15772eed99ae4acc9332e96bb335f20f_%E7%AC%AC%E4%B8%80%E5%A4%A9%EF%BC%9A%E8%BA%AB%E4%BD%93%E6%89%AB%E6%8F%8F%C2%B7%E6%89%8E%E6%A0%B9%E5%BD%93%E4%B8%8B.mp3'
+const GUIDED_AUDIO_BY_DAY: Record<number, { label: string; url?: string }> = {
+  1: {
+    label: '第一天：身体扫描·扎根当下',
+    url: 'https://present-files-1317479375.cos.ap-guangzhou.myqcloud.com/present-files-1317479375/1/object_15772eed99ae4acc9332e96bb335f20f_%E7%AC%AC%E4%B8%80%E5%A4%A9%EF%BC%9A%E8%BA%AB%E4%BD%93%E6%89%AB%E6%8F%8F%C2%B7%E6%89%8E%E6%A0%B9%E5%BD%93%E4%B8%8B.mp3',
+  },
+  2: {
+    label: '第二天：肌肉释放·溶解紧绷',
+    url: 'https://present-files-1317479375.cos.ap-guangzhou.myqcloud.com/present-files-1317479375/1/object_53028427ddc44c5ab375dbb26b018743_%E7%AC%AC%E4%BA%8C%E5%A4%A9%EF%BC%9A%E8%82%8C%E8%82%89%E9%87%8A%E6%94%BE%C2%B7%E6%BA%B6%E8%A7%A3%E7%B4%A7%E7%BB%B7.mp3',
+  },
+  3: {
+    label: '第三天：皮肤知觉·呼吸如水',
+    url: 'https://present-files-1317479375.cos.ap-guangzhou.myqcloud.com/present-files-1317479375/1/object_600074bffd814a8a8d97ac29913e5a83_%E7%AC%AC%E4%B8%89%E5%A4%A9%EF%BC%9A%E7%9A%AE%E8%82%A4%E7%9F%A5%E8%A7%89%C2%B7%E5%91%BC%E5%90%B8%E5%A6%82%E6%B0%B4.mp3',
+  },
+  4: { label: '第四天引导语音准备中' },
+  5: { label: '第五天引导语音准备中' },
+  6: { label: '第六天引导语音准备中' },
+  7: { label: '第七天引导语音准备中' },
+}
 
 export default function TodayJournalPage() {
   const { message } = App.useApp()
@@ -42,11 +59,16 @@ export default function TodayJournalPage() {
   const [loadingBinding, setLoadingBinding] = useState(false)
   const [bindingSubmitting, setBindingSubmitting] = useState(false)
   const [hasEnteredWriting, setHasEnteredWriting] = useState(false)
-  const [audioLoading, setAudioLoading] = useState(true)
+  const [audioLoading, setAudioLoading] = useState(false)
+  const [growthLoading, setGrowthLoading] = useState(false)
+  const [streakDays, setStreakDays] = useState<number | null>(null)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedSession, setSavedSession] = useState<AwarenessSession | null>(null)
   const [inquirySaving, setInquirySaving] = useState(false)
+
+  const guidedAudioDay = streakDays === null ? null : (streakDays % 7) + 1
+  const guidedAudio = guidedAudioDay === null ? null : GUIDED_AUDIO_BY_DAY[guidedAudioDay]
 
   const topMarks = useMemo(
     () => savedSession?.analysis_marks.filter((mark) => mark.is_top).slice(0, 3) ?? [],
@@ -60,20 +82,41 @@ export default function TodayJournalPage() {
     return new Map((savedSession?.inquiry_records ?? []).map((record) => [record.mark_id, record]))
   }, [savedSession])
 
+  const loadGrowth = useCallback(async () => {
+    setGrowthLoading(true)
+    try {
+      const growth = await fetchGrowth()
+      setStreakDays(growth.streak_days)
+    } catch (error) {
+      setStreakDays(0)
+      message.error(resolveApiErrorMessage(error, '暂时无法读取连续天数，先使用第一天引导语音。'))
+    } finally {
+      setGrowthLoading(false)
+    }
+  }, [message])
+
   const loadBinding = useCallback(async () => {
     setLoadingBinding(true)
     try {
-      setBinding(await fetchMyJournalBinding())
+      const data = await fetchMyJournalBinding()
+      setBinding(data)
+      if (data.is_bound) {
+        void loadGrowth()
+      }
     } catch (error) {
       message.error(resolveApiErrorMessage(error, '暂时无法读取班级绑定。'))
     } finally {
       setLoadingBinding(false)
     }
-  }, [message])
+  }, [loadGrowth, message])
 
   useEffect(() => {
     void loadBinding()
   }, [loadBinding])
+
+  useEffect(() => {
+    setAudioLoading(!!guidedAudio?.url)
+  }, [guidedAudio?.url])
 
   const handleBind = async () => {
     if (!bindingCode.trim()) {
@@ -83,6 +126,7 @@ export default function TodayJournalPage() {
     try {
       const data = await bindJournalClass(bindingCode)
       setBinding(data)
+      void loadGrowth()
       message.success('已绑定班级')
     } catch (error) {
       message.error(resolveApiErrorMessage(error, '绑定失败，请检查绑定码。'))
@@ -93,6 +137,9 @@ export default function TodayJournalPage() {
 
   const handleEnterWriting = async () => {
     setHasEnteredWriting(true)
+    if (!guidedAudio?.url) {
+      return
+    }
     try {
       await audioRef.current?.play()
     } catch {
@@ -208,28 +255,41 @@ export default function TodayJournalPage() {
             <div className="guided-audio-panel">
               <Flex align="center" justify="space-between" gap={12}>
                 <Typography.Text strong>引导语音</Typography.Text>
-                {audioLoading && (
+                {(growthLoading || audioLoading) && (
                   <Space size={6}>
                     <Spin size="small" />
-                    <Typography.Text type="secondary">正在加载</Typography.Text>
+                    <Typography.Text type="secondary">
+                      {growthLoading ? '正在匹配' : '正在加载'}
+                    </Typography.Text>
                   </Space>
                 )}
               </Flex>
-              <audio
-                ref={audioRef}
-                className="guided-audio-player"
-                controls
-                preload="metadata"
-                src={GUIDED_AUDIO_URL}
-                onLoadStart={() => setAudioLoading(true)}
-                onLoadedMetadata={() => setAudioLoading(false)}
-                onCanPlay={() => setAudioLoading(false)}
-                onPlaying={() => setAudioLoading(false)}
-                onWaiting={() => setAudioLoading(true)}
-                onError={() => setAudioLoading(false)}
-              >
-                您的浏览器暂不支持音频播放。
-              </audio>
+              {guidedAudio?.url ? (
+                <>
+                  <Typography.Text type="secondary">{guidedAudio.label}</Typography.Text>
+                  <audio
+                    ref={audioRef}
+                    className="guided-audio-player"
+                    controls
+                    preload="metadata"
+                    src={guidedAudio.url}
+                    onLoadStart={() => setAudioLoading(true)}
+                    onLoadedMetadata={() => setAudioLoading(false)}
+                    onCanPlay={() => setAudioLoading(false)}
+                    onPlaying={() => setAudioLoading(false)}
+                    onWaiting={() => setAudioLoading(true)}
+                    onError={() => setAudioLoading(false)}
+                  >
+                    您的浏览器暂不支持音频播放。
+                  </audio>
+                </>
+              ) : (
+                <div className="guided-audio-placeholder">
+                  <Typography.Text type="secondary">
+                    {guidedAudio?.label ?? '引导语音匹配中'}
+                  </Typography.Text>
+                </div>
+              )}
             </div>
             {!hasEnteredWriting ? (
               <Button
@@ -237,6 +297,7 @@ export default function TodayJournalPage() {
                 icon={<PlayCircleOutlined />}
                 size="large"
                 onClick={handleEnterWriting}
+                loading={growthLoading}
               >
                 进入书写
               </Button>

@@ -112,6 +112,15 @@ a {
   max-width: 100%;
 }
 
+.guided-audio-placeholder {
+  display: grid;
+  min-height: 54px;
+  place-items: center;
+  border: 1px dashed rgba(111, 143, 138, 0.34);
+  border-radius: 6px;
+  background: rgba(231, 238, 232, 0.42);
+}
+
 .guided-audio-panel .ant-space {
   white-space: nowrap;
 }
