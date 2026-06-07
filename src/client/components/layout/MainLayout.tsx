@@ -114,42 +114,46 @@ export default function MainLayout() {
   }, [location.pathname])
 
   const menuItems = useMemo<MenuProps['items']>(() => {
-    const items: MenuProps['items'] = [
+    const journalItems: MenuProps['items'] = [
+      {
+        key: 'dashboard',
+        icon: <DashboardOutlined />,
+        label: <Link to="/dashboard">今日书写</Link>,
+      },
+      {
+        key: 'recent',
+        icon: <HistoryOutlined />,
+        label: <Link to="/journal/recent">我的觉察本</Link>,
+      },
+      {
+        key: 'audio-history',
+        icon: <CustomerServiceOutlined />,
+        label: <Link to="/journal/audio-history">语音历史</Link>,
+      },
+      {
+        key: 'growth',
+        icon: <FireOutlined />,
+        label: <Link to="/journal/growth">我的成长</Link>,
+      },
+      {
+        key: 'resonance',
+        icon: <BulbOutlined />,
+        label: <Link to="/journal/resonance">共振墙</Link>,
+      },
+    ]
+
+    if (user?.role !== 'admin') {
+      return journalItems
+    }
+
+    return [
       {
         key: 'dashboard-group',
         icon: <DashboardOutlined />,
         label: '觉知日记',
-        children: [
-          {
-            key: 'dashboard',
-            label: <Link to="/dashboard">今日书写</Link>,
-          },
-          {
-            key: 'recent',
-            icon: <HistoryOutlined />,
-            label: <Link to="/journal/recent">我的觉察本</Link>,
-          },
-          {
-            key: 'audio-history',
-            icon: <CustomerServiceOutlined />,
-            label: <Link to="/journal/audio-history">语音历史</Link>,
-          },
-          {
-            key: 'growth',
-            icon: <FireOutlined />,
-            label: <Link to="/journal/growth">我的成长</Link>,
-          },
-          {
-            key: 'resonance',
-            icon: <BulbOutlined />,
-            label: <Link to="/journal/resonance">共振墙</Link>,
-          },
-        ],
+        children: journalItems,
       },
-    ]
-
-    if (user?.role === 'admin') {
-      items.push({
+      {
         key: 'admin-group',
         icon: <SettingOutlined />,
         label: '管理员',
@@ -159,10 +163,8 @@ export default function MainLayout() {
             label: <Link to="/admin">管理员面板</Link>,
           },
         ],
-      })
-    }
-
-    return items
+      },
+    ]
   }, [user?.role])
 
   const handleLogout = async () => {
@@ -490,11 +492,13 @@ export default function MainLayout() {
                 ? '今日书写'
                 : selectedKeys[0] === 'recent'
                   ? '我的觉察本'
-                  : selectedKeys[0] === 'growth'
-                    ? '我的成长'
-                    : selectedKeys[0] === 'resonance'
-                      ? '共振墙'
-                      : ''}
+                  : selectedKeys[0] === 'audio-history'
+                    ? '语音历史'
+                    : selectedKeys[0] === 'growth'
+                      ? '我的成长'
+                      : selectedKeys[0] === 'resonance'
+                        ? '共振墙'
+                        : ''}
           </Typography.Title>
         </Header>
         <Content style={{ padding: '24px 16px 48px' }}>
