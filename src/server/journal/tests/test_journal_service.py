@@ -230,6 +230,66 @@ def test_awareness_session_binding_growth_and_resonance(test_db_session: Session
     assert "首次完成三关觉察" in growth.badges
 
 
+def test_growth_tracks_max_streak_for_guided_audio_unlocks(test_db_session: Session):
+    teacher = _create_user(test_db_session, "growth_audio_teacher")
+    student = _create_user(test_db_session, "growth_audio_student")
+    empty_growth = service.get_growth(test_db_session, current_user=student)
+    assert empty_growth.max_streak_days == 0
+    assert empty_growth.unlocked_guided_audio_days == 1
+
+    journal_class = service.create_class(
+        test_db_session,
+        JournalClassCreate(name="语音解锁班"),
+        teacher,
+    )
+    service.bind_class(
+        test_db_session,
+        binding_code=journal_class.binding_code,
+        current_user=student,
+    )
+
+    for index, submitted_on in enumerate(
+        [
+            date(2026, 1, 1),
+            date(2026, 1, 2),
+            date(2026, 1, 3),
+            date(2026, 1, 8),
+        ],
+    ):
+        service.create_awareness_session(
+            test_db_session,
+            AwarenessSessionCreate(content=f"第 {index + 1} 次自由书写。"),
+            student,
+            today=submitted_on,
+        )
+
+    broken_growth = service.get_growth(test_db_session, current_user=student)
+    assert broken_growth.max_streak_days == 3
+    assert broken_growth.unlocked_guided_audio_days == 4
+
+    for index, submitted_on in enumerate(
+        [
+            date(2026, 2, 1),
+            date(2026, 2, 2),
+            date(2026, 2, 3),
+            date(2026, 2, 4),
+            date(2026, 2, 5),
+            date(2026, 2, 6),
+            date(2026, 2, 7),
+        ],
+    ):
+        service.create_awareness_session(
+            test_db_session,
+            AwarenessSessionCreate(content=f"连续第 {index + 1} 天自由书写。"),
+            student,
+            today=submitted_on,
+        )
+
+    full_growth = service.get_growth(test_db_session, current_user=student)
+    assert full_growth.max_streak_days == 7
+    assert full_growth.unlocked_guided_audio_days == 7
+
+
 def test_free_reflection_marks_inquiries_and_response(test_db_session: Session):
     teacher = _create_user(test_db_session, "free_teacher")
     student = _create_user(test_db_session, "free_student")

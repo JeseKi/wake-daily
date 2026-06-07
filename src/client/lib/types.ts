@@ -357,6 +357,8 @@ export interface AdminAwarenessSession extends AwarenessSession {
 
 export interface Growth {
   streak_days: number
+  max_streak_days: number
+  unlocked_guided_audio_days: number
   total_sessions: number
   tree_stage: string
   badges: string[]

@@ -228,6 +228,8 @@ def test_awareness_journal_router_flow(test_client, init_test_database):
     growth_resp = test_client.get("/api/journal/growth", headers=student_headers)
     assert growth_resp.status_code == HTTPStatus.OK, growth_resp.text
     assert growth_resp.json()["tree_stage"] == "幼苗"
+    assert growth_resp.json()["max_streak_days"] == 1
+    assert growth_resp.json()["unlocked_guided_audio_days"] == 2
 
     dashboard_resp = test_client.get(
         "/api/admin/journal/dashboard",

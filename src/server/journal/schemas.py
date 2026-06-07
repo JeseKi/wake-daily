@@ -204,6 +204,8 @@ class AdminAwarenessSessionOut(AwarenessSessionOut):
 
 class GrowthOut(BaseModel):
     streak_days: int
+    max_streak_days: int
+    unlocked_guided_audio_days: int
     total_sessions: int
     tree_stage: str
     badges: list[str]

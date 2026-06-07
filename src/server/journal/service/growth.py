@@ -18,9 +18,12 @@ def get_growth(db: Session, *, current_user: User) -> GrowthOut:
     sessions = JournalAwarenessSessionDAO(db).list_all_for_growth(user_id=current_user.id)
     submitted_dates = sorted({item.submitted_on for item in sessions}, reverse=True)
     streak = _calculate_streak(submitted_dates, datetime.now(timezone.utc).date())
+    max_streak = _calculate_max_streak(submitted_dates)
     total = len(submitted_dates)
     return GrowthOut(
         streak_days=streak,
+        max_streak_days=max_streak,
+        unlocked_guided_audio_days=_unlocked_guided_audio_days(max_streak),
         total_sessions=total,
         tree_stage=_tree_stage_for_streak(streak),
         badges=_badges_for_sessions(sessions, streak),
@@ -39,6 +42,29 @@ def _calculate_streak(submitted_dates: list[date], today: date) -> int:
         streak += 1
         cursor = cursor - timedelta(days=1)
     return streak
+
+
+def _calculate_max_streak(submitted_dates: list[date]) -> int:
+    if not submitted_dates:
+        return 0
+    ordered_dates = sorted(set(submitted_dates))
+    max_streak = 1
+    streak = 1
+    previous = ordered_dates[0]
+    for submitted_on in ordered_dates[1:]:
+        if submitted_on == previous + timedelta(days=1):
+            streak += 1
+        else:
+            streak = 1
+        max_streak = max(max_streak, streak)
+        previous = submitted_on
+    return max_streak
+
+
+def _unlocked_guided_audio_days(max_streak: int) -> int:
+    if max_streak > 6:
+        return 7
+    return max(1, min(7, max_streak + 1))
 
 
 def _tree_stage_for_streak(streak: int) -> str:

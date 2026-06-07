@@ -25,6 +25,7 @@ import {
   TabletOutlined,
   BulbOutlined,
   FireOutlined,
+  CustomerServiceOutlined,
 } from '@ant-design/icons'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
@@ -94,6 +95,9 @@ export default function MainLayout() {
     if (location.pathname.startsWith('/journal/recent')) {
       return ['recent']
     }
+    if (location.pathname.startsWith('/journal/audio-history')) {
+      return ['audio-history']
+    }
     if (location.pathname.startsWith('/journal/growth')) {
       return ['growth']
     }
@@ -124,6 +128,11 @@ export default function MainLayout() {
             key: 'recent',
             icon: <HistoryOutlined />,
             label: <Link to="/journal/recent">我的觉察本</Link>,
+          },
+          {
+            key: 'audio-history',
+            icon: <CustomerServiceOutlined />,
+            label: <Link to="/journal/audio-history">语音历史</Link>,
           },
           {
             key: 'growth',
