@@ -36,7 +36,6 @@ import type {
   AwarenessSession,
   InquiryRecord,
   JournalBinding,
-  ObjectiveSegment,
 } from '../../lib/types'
 
 export default function TodayJournalPage() {
@@ -409,9 +408,6 @@ export default function TodayJournalPage() {
                   message="这段书写更接近事实观察，写得很清楚。"
                 />
               )}
-              {savedSession.objective_segments.map((segment) => (
-                <ObjectiveSegmentNote key={`${segment.start}-${segment.end}`} segment={segment} />
-              ))}
               {foldedMarks.length > 0 && (
                 <Collapse
                   ghost
@@ -525,16 +521,5 @@ function MarkInquiry({
         )}
       </Space>
     </Card>
-  )
-}
-
-function ObjectiveSegmentNote({ segment }: { segment: ObjectiveSegment }) {
-  return (
-    <Alert
-      type="success"
-      showIcon
-      message={segment.text}
-      description={segment.message}
-    />
   )
 }
