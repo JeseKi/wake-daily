@@ -137,7 +137,7 @@ async def bind_class(
     "/api/journal/sessions",
     response_model=AwarenessSessionOut,
     status_code=status.HTTP_201_CREATED,
-    summary="提交三关觉察日记",
+    summary="提交或更新今日觉察日记",
 )
 async def create_awareness_session(
     payload: AwarenessSessionCreate,
@@ -148,6 +148,21 @@ async def create_awareness_session(
         return service.create_awareness_session(db, payload, current_user)
 
     return await run_in_thread(_create)
+
+
+@router.get(
+    "/api/journal/sessions/today",
+    response_model=AwarenessSessionOut | None,
+    summary="查看我的今日觉察日记",
+)
+async def get_today_awareness_session(
+    db: Session = Depends(get_db),
+    current_user: User = Security(get_current_user, scopes=[SCOPE_PROFILE_READ]),
+):
+    def _get():
+        return service.get_today_awareness_session(db, current_user=current_user)
+
+    return await run_in_thread(_get)
 
 
 @router.get(

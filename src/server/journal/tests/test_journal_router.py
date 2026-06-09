@@ -297,3 +297,49 @@ def test_free_reflection_router_flow(test_client, init_test_database):
     assert reviewed["review_comment"] == "我读到了你的认真。"
     assert reviewed["review_score"] is None
     assert reviewed["reward_label"] is None
+
+
+def test_today_free_reflection_can_be_edited(test_client, init_test_database):
+    admin_headers = _login_admin(test_client)
+    student_headers = _register_and_login(test_client, "editable_today_router_user")
+
+    class_resp = test_client.post(
+        "/api/admin/journal/classes",
+        headers=admin_headers,
+        json={"name": "当天可编辑班", "is_active": True},
+    )
+    assert class_resp.status_code == HTTPStatus.CREATED, class_resp.text
+    journal_class = class_resp.json()
+
+    binding_resp = test_client.post(
+        "/api/journal/classes/bind",
+        headers=student_headers,
+        json={"binding_code": journal_class["binding_code"]},
+    )
+    assert binding_resp.status_code == HTTPStatus.OK, binding_resp.text
+
+    create_resp = test_client.post(
+        "/api/journal/sessions",
+        headers=student_headers,
+        json={"content": "我觉得自己总是太慢。"},
+    )
+    assert create_resp.status_code == HTTPStatus.CREATED, create_resp.text
+    created = create_resp.json()
+
+    update_resp = test_client.post(
+        "/api/journal/sessions",
+        headers=student_headers,
+        json={"content": "窗边有一小块光。"},
+    )
+    assert update_resp.status_code == HTTPStatus.CREATED, update_resp.text
+    updated = update_resp.json()
+    assert updated["id"] == created["id"]
+    assert updated["free_content"] == "窗边有一小块光。"
+
+    today_resp = test_client.get(
+        "/api/journal/sessions/today",
+        headers=student_headers,
+    )
+    assert today_resp.status_code == HTTPStatus.OK, today_resp.text
+    assert today_resp.json()["id"] == created["id"]
+    assert today_resp.json()["free_content"] == "窗边有一小块光。"

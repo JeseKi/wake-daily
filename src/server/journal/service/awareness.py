@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from src.server.auth.models import User
 
 from ..dao import JournalAwarenessSessionDAO, JournalClassMembershipDAO
+from ..models import JournalAwarenessSession
 from ..schemas import (
     AwarenessSessionCreate,
     AwarenessSessionOut,
@@ -35,6 +36,11 @@ def create_awareness_session(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请先绑定班级")
 
     resolved_today = today or datetime.now(timezone.utc).date()
+    dao = JournalAwarenessSessionDAO(db)
+    existing_session = dao.get_by_user_and_date(
+        user_id=current_user.id,
+        submitted_on=resolved_today,
+    )
     if payload.content is not None:
         return _create_free_reflection_session(
             db,
@@ -42,6 +48,7 @@ def create_awareness_session(
             current_user=current_user,
             class_id=membership.class_id,
             submitted_on=resolved_today,
+            existing_session=existing_session,
         )
     return _create_legacy_awareness_session(
         db,
@@ -49,6 +56,7 @@ def create_awareness_session(
         current_user=current_user,
         class_id=membership.class_id,
         submitted_on=resolved_today,
+        existing_session=existing_session,
     )
 
 
@@ -59,36 +67,47 @@ def _create_free_reflection_session(
     current_user: User,
     class_id: int,
     submitted_on: date,
+    existing_session: JournalAwarenessSession | None = None,
 ) -> AwarenessSessionOut:
     content = _normalize_content(payload.content or "")
     analysis_marks = analyze_free_content(content)
     warnings = evaluate_objectivity([content])
+    values = {
+        "class_id": class_id,
+        "entry_mode": ENTRY_MODE_FREE_REFLECTION,
+        "free_content": content,
+        "objective_events_json": _json_dumps([content]),
+        "selected_event_index": 0,
+        "emotion_label": "自由书写",
+        "emotion_note": "自由书写",
+        "present_anchor": "自由书写",
+        "objectivity_warnings_json": _json_dumps(
+            [warning.model_dump() for warning in warnings]
+        ),
+        "analysis_marks_json": _json_dumps(
+            [mark.model_dump() for mark in analysis_marks]
+        ),
+        "inquiry_records_json": "[]",
+    }
+    dao = JournalAwarenessSessionDAO(db)
+    if existing_session:
+        return _build_awareness_session_out(dao.update(existing_session, values))
+
     try:
-        session = JournalAwarenessSessionDAO(db).create(
+        session = dao.create(
             user_id=current_user.id,
-            class_id=class_id,
-            entry_mode=ENTRY_MODE_FREE_REFLECTION,
-            free_content=content,
-            objective_events_json=_json_dumps([content]),
-            selected_event_index=0,
-            emotion_label="自由书写",
-            emotion_note="自由书写",
-            present_anchor="自由书写",
-            objectivity_warnings_json=_json_dumps(
-                [warning.model_dump() for warning in warnings]
-            ),
-            analysis_marks_json=_json_dumps(
-                [mark.model_dump() for mark in analysis_marks]
-            ),
-            inquiry_records_json="[]",
             submitted_on=submitted_on,
+            **values,
         )
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="今天已经提交过觉察日记",
+        session = dao.get_by_user_and_date(
+            user_id=current_user.id,
+            submitted_on=submitted_on,
         )
+        if not session:
+            raise
+        session = dao.update(session, values)
     return _build_awareness_session_out(session)
 
 
@@ -99,6 +118,7 @@ def _create_legacy_awareness_session(
     current_user: User,
     class_id: int,
     submitted_on: date,
+    existing_session: JournalAwarenessSession | None = None,
 ) -> AwarenessSessionOut:
     events = [_normalize_content(item) for item in (payload.objective_events or [])]
     selected_event_index = payload.selected_event_index or 0
@@ -109,28 +129,55 @@ def _create_legacy_awareness_session(
         )
 
     warnings = evaluate_objectivity(events)
+    values = {
+        "class_id": class_id,
+        "entry_mode": ENTRY_MODE_AWARENESS,
+        "free_content": None,
+        "objective_events_json": _json_dumps(events),
+        "selected_event_index": selected_event_index,
+        "emotion_label": _normalize_content(payload.emotion_label or ""),
+        "emotion_note": _normalize_content(payload.emotion_note or ""),
+        "present_anchor": _normalize_content(payload.present_anchor or ""),
+        "objectivity_warnings_json": _json_dumps(
+            [warning.model_dump() for warning in warnings]
+        ),
+        "analysis_marks_json": "[]",
+        "inquiry_records_json": "[]",
+    }
+    dao = JournalAwarenessSessionDAO(db)
+    if existing_session:
+        return _build_awareness_session_out(dao.update(existing_session, values))
+
     try:
-        session = JournalAwarenessSessionDAO(db).create(
+        session = dao.create(
             user_id=current_user.id,
-            class_id=class_id,
-            entry_mode=ENTRY_MODE_AWARENESS,
-            objective_events_json=_json_dumps(events),
-            selected_event_index=selected_event_index,
-            emotion_label=_normalize_content(payload.emotion_label or ""),
-            emotion_note=_normalize_content(payload.emotion_note or ""),
-            present_anchor=_normalize_content(payload.present_anchor or ""),
-            objectivity_warnings_json=_json_dumps(
-                [warning.model_dump() for warning in warnings]
-            ),
             submitted_on=submitted_on,
+            **values,
         )
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="今天已经提交过觉察日记",
+        session = dao.get_by_user_and_date(
+            user_id=current_user.id,
+            submitted_on=submitted_on,
         )
+        if not session:
+            raise
+        session = dao.update(session, values)
     return _build_awareness_session_out(session)
+
+
+def get_today_awareness_session(
+    db: Session,
+    *,
+    current_user: User,
+    today: date | None = None,
+) -> AwarenessSessionOut | None:
+    resolved_today = today or datetime.now(timezone.utc).date()
+    session = JournalAwarenessSessionDAO(db).get_by_user_and_date(
+        user_id=current_user.id,
+        submitted_on=resolved_today,
+    )
+    return _build_awareness_session_out(session) if session else None
 
 
 def list_recent_awareness_sessions(

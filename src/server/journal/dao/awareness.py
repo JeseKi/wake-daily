@@ -62,6 +62,16 @@ class JournalAwarenessSessionDAO(BaseDAO):
             .first()
         )
 
+    def get_by_user_and_date(
+        self, *, user_id: int, submitted_on: date
+    ) -> JournalAwarenessSession | None:
+        return (
+            self.db_session.query(JournalAwarenessSession)
+            .filter(JournalAwarenessSession.user_id == user_id)
+            .filter(JournalAwarenessSession.submitted_on == submitted_on)
+            .first()
+        )
+
     def list_recent(
         self, *, user_id: int, since: datetime, limit: int = 100
     ) -> list[JournalAwarenessSession]:

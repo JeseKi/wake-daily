@@ -12,7 +12,12 @@ import {
   Tooltip,
   Typography,
 } from 'antd'
-import { PlayCircleOutlined, QuestionCircleOutlined, SaveOutlined } from '@ant-design/icons'
+import {
+  EditOutlined,
+  PlayCircleOutlined,
+  QuestionCircleOutlined,
+  SaveOutlined,
+} from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -23,6 +28,7 @@ import {
   createAwarenessSession,
   fetchGrowth,
   fetchMyJournalBinding,
+  fetchTodayAwarenessSession,
   updateAwarenessSessionInquiries,
 } from '../../lib/journal'
 import type {
@@ -43,10 +49,12 @@ export default function TodayJournalPage() {
   const [hasEnteredWriting, setHasEnteredWriting] = useState(false)
   const [audioLoading, setAudioLoading] = useState(false)
   const [growthLoading, setGrowthLoading] = useState(false)
+  const [todaySessionLoading, setTodaySessionLoading] = useState(false)
   const [streakDays, setStreakDays] = useState<number | null>(null)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedSession, setSavedSession] = useState<AwarenessSession | null>(null)
+  const [isEditingSavedSession, setIsEditingSavedSession] = useState(false)
   const [inquirySaving, setInquirySaving] = useState(false)
 
   const guidedAudioDay = streakDays === null ? null : (streakDays % 7) + 1
@@ -77,6 +85,23 @@ export default function TodayJournalPage() {
     }
   }, [message])
 
+  const loadTodaySession = useCallback(async () => {
+    setTodaySessionLoading(true)
+    try {
+      const session = await fetchTodayAwarenessSession()
+      setSavedSession(session)
+      setIsEditingSavedSession(false)
+      if (session?.free_content) {
+        setContent(session.free_content)
+        setHasEnteredWriting(true)
+      }
+    } catch (error) {
+      message.error(resolveApiErrorMessage(error, '暂时无法读取今日书写。'))
+    } finally {
+      setTodaySessionLoading(false)
+    }
+  }, [message])
+
   const loadBinding = useCallback(async () => {
     setLoadingBinding(true)
     try {
@@ -84,13 +109,14 @@ export default function TodayJournalPage() {
       setBinding(data)
       if (data.is_bound) {
         void loadGrowth()
+        void loadTodaySession()
       }
     } catch (error) {
       message.error(resolveApiErrorMessage(error, '暂时无法读取班级绑定。'))
     } finally {
       setLoadingBinding(false)
     }
-  }, [loadGrowth, message])
+  }, [loadGrowth, loadTodaySession, message])
 
   useEffect(() => {
     void loadBinding()
@@ -109,6 +135,7 @@ export default function TodayJournalPage() {
       const data = await bindJournalClass(bindingCode)
       setBinding(data)
       void loadGrowth()
+      void loadTodaySession()
       message.success('已绑定班级')
     } catch (error) {
       message.error(resolveApiErrorMessage(error, '绑定失败，请检查绑定码。'))
@@ -137,7 +164,10 @@ export default function TodayJournalPage() {
     try {
       const session = await createAwarenessSession({ content })
       setSavedSession(session)
-      message.success('今日书写已保存')
+      setContent(session.free_content ?? content)
+      setHasEnteredWriting(true)
+      setIsEditingSavedSession(false)
+      message.success(savedSession ? '今日书写已更新' : '今日书写已保存')
     } catch (error) {
       message.error(resolveApiErrorMessage(error, '保存失败，请稍后再试。'))
     } finally {
@@ -232,7 +262,7 @@ export default function TodayJournalPage() {
       </Space>
 
       {!savedSession ? (
-        <Card className="forest-card free-writing-card">
+        <Card className="forest-card free-writing-card" loading={todaySessionLoading}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <div className="guided-audio-panel">
               <Flex align="center" justify="space-between" gap={12}>
@@ -311,7 +341,51 @@ export default function TodayJournalPage() {
         <Flex vertical gap={16}>
           <Card className="forest-card">
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <Typography.Text type="secondary">系统标记</Typography.Text>
+              <Flex align="center" justify="space-between" gap={12} wrap="wrap">
+                <Typography.Text type="secondary">系统标记</Typography.Text>
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    setContent(savedSession.free_content ?? '')
+                    setIsEditingSavedSession(true)
+                  }}
+                  disabled={saving}
+                >
+                  编辑今日书写
+                </Button>
+              </Flex>
+              {isEditingSavedSession && (
+                <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                  <Input.TextArea
+                    value={content}
+                    onChange={(event) => setContent(event.target.value)}
+                    placeholder="想写什么就写什么。可以不完整，可以重复，也可以只是此刻的一句话。"
+                    autoSize={{ minRows: 10, maxRows: 20 }}
+                    disabled={saving}
+                    style={{ fontSize: 16, lineHeight: 1.9 }}
+                  />
+                  <Space wrap>
+                    <Button
+                      onClick={() => {
+                        setContent(savedSession.free_content ?? '')
+                        setIsEditingSavedSession(false)
+                      }}
+                      disabled={saving}
+                    >
+                      取消
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<SaveOutlined />}
+                      onClick={handleSave}
+                      loading={saving}
+                      disabled={!content.trim()}
+                    >
+                      保存修改
+                    </Button>
+                  </Space>
+                </Space>
+              )}
               <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', lineHeight: 1.9, margin: 0 }}>
                 {renderMarkedContent(savedSession.free_content ?? '', topMarks)}
               </Typography.Paragraph>

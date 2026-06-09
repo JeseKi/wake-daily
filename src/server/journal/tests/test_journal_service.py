@@ -351,6 +351,47 @@ def test_free_reflection_marks_inquiries_and_response(test_db_session: Session):
     assert reviewed.reward_label is None
 
 
+def test_today_awareness_session_can_be_updated(test_db_session: Session):
+    teacher = _create_user(test_db_session, "editable_today_teacher")
+    student = _create_user(test_db_session, "editable_today_student")
+    journal_class = service.create_class(
+        test_db_session,
+        JournalClassCreate(name="可编辑日记班"),
+        teacher,
+    )
+    service.bind_class(
+        test_db_session,
+        binding_code=journal_class.binding_code,
+        current_user=student,
+    )
+
+    first = service.create_awareness_session(
+        test_db_session,
+        AwarenessSessionCreate(content="我觉得今天有点慢。"),
+        student,
+        today=date(2026, 6, 9),
+    )
+    updated = service.create_awareness_session(
+        test_db_session,
+        AwarenessSessionCreate(content="窗边有一小块光。"),
+        student,
+        today=date(2026, 6, 9),
+    )
+    today_session = service.get_today_awareness_session(
+        test_db_session,
+        current_user=student,
+        today=date(2026, 6, 9),
+    )
+
+    assert updated.id == first.id
+    assert updated.free_content == "窗边有一小块光。"
+    assert updated.inquiry_records == []
+    assert today_session is not None
+    assert today_session.id == first.id
+    assert today_session.free_content == "窗边有一小块光。"
+    assert service.get_growth(test_db_session, current_user=student).total_sessions == 1
+
+
 def test_free_reflection_deduplicates_repeated_top_words():
     marks = service.analyze_free_content("我不知道我为什么要做这个东西。")
 

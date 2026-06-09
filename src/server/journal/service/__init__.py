@@ -12,6 +12,7 @@ from .analysis import (
 )
 from .awareness import (
     create_awareness_session,
+    get_today_awareness_session,
     list_recent_awareness_sessions,
     update_awareness_session_inquiries,
     update_awareness_session_review,
@@ -60,6 +61,7 @@ __all__ = [
     "get_admin_dashboard",
     "get_growth",
     "get_my_binding",
+    "get_today_awareness_session",
     "get_today_question",
     "list_admin_awareness_sessions",
     "list_classes",

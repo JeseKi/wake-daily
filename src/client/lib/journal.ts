@@ -85,6 +85,11 @@ export async function createAwarenessSession(
   return data
 }
 
+export async function fetchTodayAwarenessSession(): Promise<AwarenessSession | null> {
+  const { data } = await api.get<AwarenessSession | null>('/journal/sessions/today')
+  return data
+}
+
 export async function listRecentAwarenessSessions(days = 30): Promise<AwarenessSession[]> {
   const { data } = await api.get<AwarenessSession[]>('/journal/sessions/recent', {
     params: { days },
