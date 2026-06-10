@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveApiErrorMessage } from '../../lib/error'
-import { GUIDED_AUDIO_BY_DAY } from '../../lib/guidedAudio'
+import { GUIDED_AUDIO_BY_DAY, getGuidedAudioDayForStreak } from '../../lib/guidedAudio'
 import {
   bindJournalClass,
   createAwarenessSession,
@@ -56,7 +56,7 @@ export default function TodayJournalPage() {
   const [isEditingSavedSession, setIsEditingSavedSession] = useState(false)
   const [inquirySaving, setInquirySaving] = useState(false)
 
-  const guidedAudioDay = streakDays === null ? null : (streakDays % 7) + 1
+  const guidedAudioDay = streakDays === null ? null : getGuidedAudioDayForStreak(streakDays)
   const guidedAudio = guidedAudioDay === null ? null : GUIDED_AUDIO_BY_DAY[guidedAudioDay]
 
   const topMarks = useMemo(

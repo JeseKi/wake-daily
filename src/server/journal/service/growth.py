@@ -62,9 +62,13 @@ def _calculate_max_streak(submitted_dates: list[date]) -> int:
 
 
 def _unlocked_guided_audio_days(max_streak: int) -> int:
-    if max_streak > 6:
+    if max_streak >= 10:
         return 7
-    return max(1, min(7, max_streak + 1))
+    if max_streak >= 7:
+        return max_streak - 3
+    if max_streak >= 2:
+        return 3
+    return max_streak + 1
 
 
 def _tree_stage_for_streak(streak: int) -> str:

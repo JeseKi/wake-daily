@@ -265,7 +265,7 @@ def test_growth_tracks_max_streak_for_guided_audio_unlocks(test_db_session: Sess
 
     broken_growth = service.get_growth(test_db_session, current_user=student)
     assert broken_growth.max_streak_days == 3
-    assert broken_growth.unlocked_guided_audio_days == 4
+    assert broken_growth.unlocked_guided_audio_days == 3
 
     for index, submitted_on in enumerate(
         [
@@ -287,7 +287,25 @@ def test_growth_tracks_max_streak_for_guided_audio_unlocks(test_db_session: Sess
 
     full_growth = service.get_growth(test_db_session, current_user=student)
     assert full_growth.max_streak_days == 7
-    assert full_growth.unlocked_guided_audio_days == 7
+    assert full_growth.unlocked_guided_audio_days == 4
+
+    for index, submitted_on in enumerate(
+        [
+            date(2026, 2, 8),
+            date(2026, 2, 9),
+            date(2026, 2, 10),
+        ],
+    ):
+        service.create_awareness_session(
+            test_db_session,
+            AwarenessSessionCreate(content=f"第二周第 {index + 1} 次自由书写。"),
+            student,
+            today=submitted_on,
+        )
+
+    two_week_growth = service.get_growth(test_db_session, current_user=student)
+    assert two_week_growth.max_streak_days == 10
+    assert two_week_growth.unlocked_guided_audio_days == 7
 
 
 def test_free_reflection_marks_inquiries_and_response(test_db_session: Session):
